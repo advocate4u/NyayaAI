@@ -74,7 +74,7 @@ export default function LegalQuestionPanel() {
         'Source URL: ' + (result.sourceUrl || result.document.sourceUrl || 'Not supplied'),
         'Verification date: ' + (result.document.sourceDate || 'Not supplied'),
         'Passage: ' + result.snippet
-      ].join('\\n')).join('\\n\\n');
+      ].join('\n')).join('\n\n');
       const answer = await engine.answer(submittedQuestion, evidence);
       setModelAnswer(answer);
       setModelProgress('Generated locally using ' + engine.modelId + '. Verify all cited passages against the current official source.');
