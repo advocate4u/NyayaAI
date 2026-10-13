@@ -4,6 +4,31 @@ import { deleteOfflineDocument, listOfflineDocuments, parseLegalFile, saveOfflin
 
 type Props = { query: string };
 
+const OFFICIAL_SOURCES = [
+  { name: 'India Code', purpose: 'Central Acts and legislation', url: 'https://www.indiacode.nic.in/' },
+  { name: 'Legislative Department', purpose: 'Constitution and legislative materials', url: 'https://legislative.gov.in/' },
+  { name: 'e-Gazette of India', purpose: 'Gazette notifications and commencement notices', url: 'https://egazette.gov.in/' },
+  { name: 'Supreme Court of India', purpose: 'Supreme Court judgments and orders', url: 'https://www.sci.gov.in/' },
+  { name: 'eCourts Services', purpose: 'Court services and judgment search', url: 'https://ecourts.gov.in/' }
+];
+
+const JSON_IMPORT_TEMPLATE = {
+  title: 'Enter the exact Act / Rules / Judgment title',
+  actYear: 'Enter enactment or decision year',
+  sourceUrl: 'https://paste-the-official-source-url-here',
+  sourceDate: new Date().toISOString().slice(0, 10),
+  sections: [
+    {
+      citation: 'Section 1 / Article 1 / paragraph 1',
+      heading: 'Exact official heading',
+      text: 'Paste the exact provision or paragraph from the official source. Preserve wording and punctuation.',
+      sourceUrl: 'https://paste-the-direct-official-provision-url-here'
+    }
+  ]
+};
+
+type OfficialSource = typeof OFFICIAL_SOURCES[number];
+
 export default function OfflineLibrary({ query }: Props) {
   const [documents, setDocuments] = useState<OfflineLegalDocument[]>([]);
   const [message, setMessage] = useState('');
@@ -57,6 +82,16 @@ export default function OfflineLibrary({ query }: Props) {
     }
   }
 
+  function downloadJsonTemplate() {
+    const payload = JSON.stringify(JSON_IMPORT_TEMPLATE, null, 2);
+    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'nyayaai-section-import-template.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage('Section-level JSON template downloaded. Replace every example field with text and URLs checked against the official source before importing.');
+  }
 
   async function exportBackup() {
     if (!documents.length) {
@@ -106,6 +141,15 @@ export default function OfflineLibrary({ query }: Props) {
       </div>
       <div className="library-card">
         <p className="profile-intro">Import a PDF, .txt file or structured .json file from an authoritative source. Selectable PDF text is extracted directly; scanned PDF pages use on-device OCR. Files stay in this browser on this device; nothing is uploaded. JSON backups can be restored here. Duplicate documents are skipped to protect existing entries. Files over 50 MB are rejected; split large collections before importing. OCR language data may need a one-time internet download and can use significant memory on long PDFs.</p>
+        <div className="official-source-panel">
+          <div className="official-source-heading"><h3>Official Indian-law source directory</h3><button className="save-button" type="button" onClick={downloadJsonTemplate}><Download size={14} /> Section JSON template</button></div>
+          <p>Open an official portal, locate the exact Act, rule, notification or judgment, then import a downloaded copy or paste its verified text into the section template. NyayaAI does not automatically crawl these sites or confirm that a document is current.</p>
+          <div className="official-source-grid">
+            {OFFICIAL_SOURCES.map((source: OfficialSource) => <a key={source.name} className="official-source-link" href={source.url} target="_blank" rel="noreferrer">
+              <strong>{source.name}<ChevronRight size={13} /></strong><span>{source.purpose}</span><small>{new URL(source.url).hostname}</small>
+            </a>)}
+          </div>
+        </div>
         <div className="import-metadata">
           <label>Official source URL (optional)<input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://official-source.gov.in/…" /></label>
           <label>Source checked on (optional)<input type="date" value={sourceDate} onChange={(event) => setSourceDate(event.target.value)} /></label>
@@ -118,7 +162,7 @@ export default function OfflineLibrary({ query }: Props) {
         </label>
         <details className="json-help">
           <summary>JSON format for structured legal text</summary>
-          <pre>{'{\n  "title": "Example Act, 2024",\n  "actYear": "2024",\n  "sourceUrl": "https://official-source.example/act",\n  "sourceDate": "2026-10-13",\n  "sections": [\n    {\n      "citation": "Section 1",\n      "heading": "Title and commencement",\n      "text": "Paste verified section text here...",\n      "sourceUrl": "https://official-source.example/act#section-1"\n    }\n  ]\n}'}</pre>
+          <pre>{JSON.stringify(JSON_IMPORT_TEMPLATE, null, 2)}</pre>
         </details>
         {message && <p className="library-message" role="status">{message}</p>}
       </div>
