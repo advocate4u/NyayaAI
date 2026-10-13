@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { createLocalLegalEngine, type LocalLegalEngine } from './localAi';
+import { generateOnlineLegalAnswer, isOnlineAiConfigured } from './onlineAi';
 import { BookOpen, ClipboardList, Copy, Info, Search } from 'lucide-react';
 import { listOfflineDocuments, searchOfflineDocuments, type OfflineLegalDocument, type OfflineSearchResult } from './legalStore';
 
@@ -16,6 +17,10 @@ export default function LegalQuestionPanel() {
   const [modelProgress, setModelProgress] = useState('');
   const [generating, setGenerating] = useState(false);
   const [modelAnswer, setModelAnswer] = useState('');
+  const [onlineBusy, setOnlineBusy] = useState(false);
+  const [onlineAnswer, setOnlineAnswer] = useState('');
+  const [onlineModel, setOnlineModel] = useState('');
+  const [onlineProgress, setOnlineProgress] = useState('');
 
   const results = useMemo<OfflineSearchResult[]>(
     () => submittedQuestion ? searchOfflineDocuments(documents, submittedQuestion).slice(0, 8) : [],
@@ -32,6 +37,8 @@ export default function LegalQuestionPanel() {
     setBusy(true);
     setMessage('');
     setModelAnswer('');
+    setOnlineAnswer('');
+    setOnlineProgress('');
     try {
       const library = await listOfflineDocuments();
       setDocuments(library);
@@ -60,6 +67,16 @@ export default function LegalQuestionPanel() {
     }
   }
 
+  function buildEvidenceContext() {
+    return results.map((result, index) => [
+      '[' + (index + 1) + '] ' + result.document.title + (result.citation ? ' — ' + result.citation : '') + (result.sectionHeading ? ' — ' + result.sectionHeading : ''),
+      'Source URL: ' + (result.sourceUrl || result.document.sourceUrl || 'Not supplied'),
+      'User-entered source-check date: ' + (result.document.sourceDate || 'Not supplied'),
+      'NyayaAI authentication status: NOT INDEPENDENTLY VERIFIED. The source URL and date are user-supplied metadata, not a legal currency check.',
+      'Passage: ' + result.snippet
+    ].join('\n')).join('\n\n');
+  }
+
   async function generateLocalAnswer() {
     if (!engine || !submittedQuestion || !results.length) {
       setModelProgress('Search for a question with matching imported legal passages first.');
@@ -69,20 +86,33 @@ export default function LegalQuestionPanel() {
     setModelAnswer('');
     setModelProgress('Generating an answer on this device…');
     try {
-      const evidence = results.map((result, index) => [
-        '[' + (index + 1) + '] ' + result.document.title + (result.citation ? ' — ' + result.citation : '') + (result.sectionHeading ? ' — ' + result.sectionHeading : ''),
-        'Source URL: ' + (result.sourceUrl || result.document.sourceUrl || 'Not supplied'),
-        'User-entered source-check date: ' + (result.document.sourceDate || 'Not supplied'),
-        'NyayaAI authentication status: NOT INDEPENDENTLY VERIFIED. The source URL and date are user-supplied metadata, not a legal currency check.',
-        'Passage: ' + result.snippet
-      ].join('\n')).join('\n\n');
-      const answer = await engine.answer(submittedQuestion, evidence);
+      const answer = await engine.answer(submittedQuestion, buildEvidenceContext());
       setModelAnswer(answer);
       setModelProgress('Generated locally using ' + engine.modelId + '. Verify all cited passages against the current official source.');
     } catch (error) {
       setModelProgress(error instanceof Error ? error.message : 'Local generation failed. Use the cited passages directly.');
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function generateOnlineAnswer() {
+    if (!submittedQuestion || !results.length) {
+      setOnlineProgress('Search for a question with matching imported legal passages first.');
+      return;
+    }
+    setOnlineBusy(true);
+    setOnlineAnswer('');
+    setOnlineProgress('Sending the question and selected evidence to your configured online AI service…');
+    try {
+      const response = await generateOnlineLegalAnswer(submittedQuestion, buildEvidenceContext());
+      setOnlineAnswer(response.answer);
+      setOnlineModel(response.model);
+      setOnlineProgress('Online answer received. Review every citation against the original official source.');
+    } catch (error) {
+      setOnlineProgress(error instanceof Error ? error.message : 'Online AI request failed. Offline search remains available.');
+    } finally {
+      setOnlineBusy(false);
     }
   }
 
@@ -115,10 +145,10 @@ export default function LegalQuestionPanel() {
     <section className="content-section question-panel-section">
       <div className="section-heading">
         <div><span className="section-kicker">NEXT: SOURCE-GROUNDED Q&A</span><h2>Ask NyayaAI</h2></div>
-        <span className="result-count">Offline research</span>
+        <span className="result-count">{isOnlineAiConfigured() ? "Hybrid AI ready" : "Offline-first research"}</span>
       </div>
       <div className="question-panel-card">
-        <div className="question-panel-note"><Info size={17} /><span>This milestone retrieves matching provisions from your local library. It does not generate an AI legal opinion yet; the on-device model will be integrated separately.</span></div>
+        <div className="question-panel-note"><Info size={17} /><span>NyayaAI retrieves local legal passages first. Optional local AI keeps the question on this device; optional online AI sends the question and selected passages to your configured server/provider. Neither mode independently verifies current law.</span></div>
         <form onSubmit={(event) => { void askQuestion(event); }} className="question-form">
           <label htmlFor="nyaya-question">Ask a legal question</label>
           <textarea id="nyaya-question" rows={3} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Example: What does my imported text say about bail or limitation?" />
@@ -136,16 +166,27 @@ export default function LegalQuestionPanel() {
         </div>}
 
         <div className="local-ai-controls">
-          <div className="local-ai-heading"><strong><span className="section-kicker">ON-DEVICE AI</span><br />Optional local model</strong><span className="local-ai-status">{engine ? 'Loaded' : 'Not loaded'}</span></div>
-          <p>The model is downloaded only after you press the button. The first download requires internet and may use hundreds of MB of storage; after caching, generation may work offline. WebGPU and available memory vary by phone/browser.</p>
+          <div className="local-ai-heading"><strong><span className="section-kicker">ON-DEVICE AI</span><br />Private local model</strong><span className="local-ai-status">{engine ? 'Loaded' : 'Not loaded'}</span></div>
+          <p>Runs on this device after the first model download. Your question and evidence are not sent to a cloud AI provider in this mode. WebGPU, memory and browser storage support vary by device.</p>
           {!engine && <button className="primary-button" type="button" disabled={modelBusy} onClick={() => { void loadModel(); }}>{modelBusy ? 'Loading model…' : 'Load local AI model'}</button>}
-          {engine && submittedQuestion && results.length > 0 && <button className="primary-button" type="button" disabled={generating} onClick={() => { void generateLocalAnswer(); }}>{generating ? 'Generating locally…' : 'Generate answer from cited passages'}</button>}
+          {engine && submittedQuestion && results.length > 0 && <button className="primary-button" type="button" disabled={generating} onClick={() => { void generateLocalAnswer(); }}>{generating ? 'Generating locally…' : 'Generate answer locally'}</button>}
           {modelProgress && <p className="model-progress" role="status">{modelProgress}</p>}
         </div>
+        {isOnlineAiConfigured() && <div className="local-ai-controls online-ai-controls">
+          <div className="local-ai-heading"><strong><span className="section-kicker">ADVANCED ONLINE AI</span><br />GPT-style reasoning</strong><span className="local-ai-status">Configured</span></div>
+          <p>This uses a server-side model configured by the app owner. Your question and the retrieved passages below will be sent to that service. Do not submit confidential client details unless your deployment's privacy and retention terms permit it.</p>
+          <button className="primary-button" type="button" disabled={onlineBusy || !submittedQuestion || results.length === 0} onClick={() => { void generateOnlineAnswer(); }}>{onlineBusy ? 'Generating online…' : 'Generate advanced answer'}</button>
+          {onlineProgress && <p className="model-progress" role="status">{onlineProgress}</p>}
+        </div>}
         {modelAnswer && <article className="ai-answer">
           <div className="ai-answer-title"><strong>Local AI response</strong><span>{engine?.modelId}</span></div>
           <p className="ai-answer-warning">Review the citations and source text before relying on this generated answer. Imported documents are not independently verified.</p>
           <div className="ai-answer-text">{modelAnswer}</div>
+        </article>}
+        {onlineAnswer && <article className="ai-answer">
+          <div className="ai-answer-title"><strong>Advanced online AI response</strong><span>{onlineModel}</span></div>
+          <p className="ai-answer-warning">This answer was generated online using selected imported passages. Sources and current legal status are not independently verified. Do not rely on it without checking official text and case records.</p>
+          <div className="ai-answer-text">{onlineAnswer}</div>
         </article>}
 
         <div className="question-panel-footer"><ClipboardList size={15} /><span>Source-first design: answers should be grounded in the imported text and cite the exact provision. AI synthesis is the next stage.</span></div>

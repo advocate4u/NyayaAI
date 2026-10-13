@@ -119,3 +119,23 @@ The Offline legal library includes an **Export backup** action. It exports impor
 ## Import validation and restore safety
 
 Imports are limited to 50 MB per file. Optional source URLs and per-section URLs must use HTTP or HTTPS, and source-check dates must be real dates in YYYY-MM-DD format. JSON backup files can be restored through the same import control. Restore skips duplicate title/source pairs (or identical title/text when no source URL exists) and preserves existing documents instead of overwriting them on an ID collision. These checks improve import safety; they do not authenticate legal sources or verify that a law is current.
+
+
+## Hybrid advanced AI (optional)
+
+NyayaAI supports two distinct answer paths:
+
+- **Private local AI:** the experimental WebLLM/WebGPU model runs in the browser after its first download. Questions and evidence remain on the device.
+- **Advanced online AI:** an optional server endpoint can use a stronger hosted model (default server setting: `gpt-5.2`) to reason over the same retrieved passages. This is a model-powered feature, not a claim that NyayaAI reproduces GPT-5.2 or its weights.
+
+The online path is disabled unless `VITE_NYAYAI_AI_ENDPOINT` is configured at build time. The repository includes a Vercel-compatible `api/answer.js` serverless function and `.env.example` for setup. For a same-origin Vercel deployment, set the build variable `VITE_NYAYAI_AI_ENDPOINT=/api/answer`, and set these server-side variables in the hosting dashboard:
+
+- `OPENAI_API_KEY`: your private provider API key. Never add this to client-side `VITE_*` variables or commit it to Git.
+- `OPENAI_MODEL`: optional model ID; defaults to `gpt-5.2`. Choose a model your API account is permitted to use.
+- `NYAYAI_ALLOWED_ORIGIN`: the exact deployed app origin, for example `https://your-app.example`.
+
+Deploy the repository to a host that supports the Vercel serverless `api/` directory. GitHub Pages alone is static hosting and cannot execute `api/answer.js`; keep online AI disabled on GitHub Pages unless you configure a separate secured backend and set its HTTPS endpoint. Never put provider keys in browser code.
+
+The endpoint limits question/evidence lengths, returns no-store responses, includes a basic per-instance rate limit, and supports an allowed-origin setting. **This in-memory limit is only a guardrail, not production-grade abuse prevention**; configure hosting-level rate limits, quotas, monitoring and billing limits before making the endpoint public. Keep secrets only in the server's environment settings. The online mode transmits the question and selected retrieved passages to your configured server and AI provider; do not send confidential client information unless your privacy, professional duties and provider terms permit it.
+
+Both answer modes use a source-grounded legal-reasoning prompt: cite every material proposition to retrieved evidence, do not invent authorities, separate reasoning from missing facts, and disclose when the evidence is insufficient. Imported law remains unverified; the model cannot establish whether a statute or judgment is current. Always verify citations, amendments, commencement and the case record against authoritative sources.
