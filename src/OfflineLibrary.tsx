@@ -26,9 +26,30 @@ export default function OfflineLibrary({ query }: Props) {
     setMessage('');
     try {
       const parsed = await parseLegalFile(file, { sourceUrl, sourceDate, ocrLanguage, onProgress: setMessage });
-      for (const document of parsed) await saveOfflineDocument(document);
+      const existing = await listOfflineDocuments();
+      const seen = new Set(existing.map((document) => {
+        const title = document.title.trim().toLocaleLowerCase();
+        const source = document.sourceUrl.trim().toLocaleLowerCase();
+        return source ? title + '|url|' + source : title + '|text|' + document.text.trim().toLocaleLowerCase();
+      }));
+      const existingIds = new Set(existing.map((document) => document.id));
+      let added = 0;
+      let skipped = 0;
+      for (const document of parsed) {
+        const title = document.title.trim().toLocaleLowerCase();
+        const source = document.sourceUrl.trim().toLocaleLowerCase();
+        const fingerprint = source ? title + '|url|' + source : title + '|text|' + document.text.trim().toLocaleLowerCase();
+        if (seen.has(fingerprint)) { skipped += 1; continue; }
+        if (existingIds.has(document.id)) {
+          document.id = 'import-' + (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
+        }
+        await saveOfflineDocument(document);
+        existingIds.add(document.id);
+        seen.add(fingerprint);
+        added += 1;
+      }
       setDocuments(await listOfflineDocuments());
-      setMessage(`Imported ${parsed.length} document${parsed.length === 1 ? '' : 's'} to this device.`);
+      setMessage(`Imported ${added} document${added === 1 ? '' : 's'}; skipped ${skipped} duplicate${skipped === 1 ? '' : 's'}. Existing documents were preserved.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not import the selected file.');
     } finally {
@@ -84,15 +105,15 @@ export default function OfflineLibrary({ query }: Props) {
         <div className="library-heading-actions"><span className="result-count">{documents.length} imported</span><button className="save-button" type="button" disabled={!documents.length} onClick={() => { void exportBackup(); }}><Download size={14} /> Export backup</button></div>
       </div>
       <div className="library-card">
-        <p className="profile-intro">Import a PDF, .txt file or structured .json file from an authoritative source. Selectable PDF text is extracted directly; scanned PDF pages use on-device OCR. Files stay in this browser on this device; nothing is uploaded. OCR language data may need a one-time internet download and can use significant memory on long PDFs.</p>
+        <p className="profile-intro">Import a PDF, .txt file or structured .json file from an authoritative source. Selectable PDF text is extracted directly; scanned PDF pages use on-device OCR. Files stay in this browser on this device; nothing is uploaded. JSON backups can be restored here. Duplicate documents are skipped to protect existing entries. Files over 50 MB are rejected; split large collections before importing. OCR language data may need a one-time internet download and can use significant memory on long PDFs.</p>
         <div className="import-metadata">
           <label>Official source URL (optional)<input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://official-source.gov.in/…" /></label>
-          <label>Verified on (optional)<input type="date" value={sourceDate} onChange={(event) => setSourceDate(event.target.value)} /></label>
+          <label>Source checked on (optional)<input type="date" value={sourceDate} onChange={(event) => setSourceDate(event.target.value)} /></label>
           <label>OCR language for scanned PDFs<select value={ocrLanguage} onChange={(event) => setOcrLanguage(event.target.value as 'eng' | 'eng+hin')}><option value="eng+hin">English + Hindi</option><option value="eng">English only</option></select></label>
         </div>
         <label className="file-picker">
           <ArrowDownToLine size={18} />
-          <span>{busy ? 'Importing document…' : 'Import PDF, TXT or JSON'}</span>
+          <span>{busy ? 'Importing document…' : 'Import / restore PDF, TXT or JSON backup'}</span>
           <input type="file" accept=".pdf,.txt,.json,application/pdf,text/plain,application/json" disabled={busy} onChange={(event) => { void importFile(event.target.files?.[0]); event.currentTarget.value = ''; }} />
         </label>
         <details className="json-help">
