@@ -67,7 +67,7 @@ The current app can import `.txt` files or structured `.json` files. Imported da
   "sourceDate": "2026-10-13",
   "sections": [
     {
-      "sectionNumber": "1",
+      "citation": "Section 1",
       "heading": "Title and commencement",
       "text": "Paste the verified text of this section here.",
       "sourceUrl": "https://official-source.example/act#section-1"
