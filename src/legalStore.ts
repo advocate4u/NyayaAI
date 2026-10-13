@@ -1,3 +1,10 @@
+export type LegalSection = {
+  sectionNumber: string;
+  heading: string;
+  text: string;
+  sourceUrl?: string;
+};
+
 export type OfflineLegalDocument = {
   id: string;
   title: string;
@@ -5,6 +12,7 @@ export type OfflineLegalDocument = {
   sourceUrl: string;
   sourceDate: string;
   text: string;
+  sections?: LegalSection[];
   importedAt: string;
 };
 
@@ -61,6 +69,15 @@ export async function deleteOfflineDocument(id: string): Promise<void> {
   });
 }
 
+export type OfflineSearchResult = {
+  document: OfflineLegalDocument;
+  matchedTerms: number;
+  snippet: string;
+  sectionNumber?: string;
+  sectionHeading?: string;
+  sourceUrl?: string;
+};
+
 export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]> {
   const raw = await file.text();
   const importedAt = new Date().toISOString();
@@ -71,8 +88,19 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
       if (!entry || typeof entry !== 'object') throw new Error('Each JSON document must be an object.');
       const value = entry as Record<string, unknown>;
       const title = typeof value.title === 'string' ? value.title.trim() : '';
-      const text = typeof value.text === 'string' ? value.text.trim() : '';
-      if (!title || !text) throw new Error('Each JSON document needs non-empty "title" and "text" fields.');
+      const sectionsRaw = Array.isArray(value.sections) ? value.sections : [];
+      const sections = sectionsRaw.map((section, sectionIndex) => {
+        if (!section || typeof section !== 'object') throw new Error('Each section must be an object.');
+        const item = section as Record<string, unknown>;
+        const sectionNumber = typeof item.sectionNumber === 'string' || typeof item.sectionNumber === 'number' ? String(item.sectionNumber).trim() : '';
+        const heading = typeof item.heading === 'string' ? item.heading.trim() : '';
+        const sectionText = typeof item.text === 'string' ? item.text.trim() : '';
+        if (!sectionNumber || !sectionText) throw new Error(`Section ${sectionIndex + 1} needs "sectionNumber" and "text".`);
+        return { sectionNumber, heading, text: sectionText, ...(typeof item.sourceUrl === 'string' ? { sourceUrl: item.sourceUrl } : {}) };
+      });
+      const suppliedText = typeof value.text === 'string' ? value.text.trim() : '';
+      const text = suppliedText || sections.map((section) => `Section ${section.sectionNumber}: ${section.heading}\\n${section.text}`).join('\\n\\n');
+      if (!title || !text) throw new Error('Each JSON document needs a title and either non-empty "text" or a "sections" array.');
       return {
         id: typeof value.id === 'string' && value.id.trim() ? value.id : `import-${Date.now()}-${index}`,
         title,
@@ -80,6 +108,7 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
         sourceUrl: typeof value.sourceUrl === 'string' ? value.sourceUrl : '',
         sourceDate: typeof value.sourceDate === 'string' ? value.sourceDate : '',
         text,
+        sections,
         importedAt
       };
     });
@@ -100,21 +129,46 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
   }];
 }
 
-export function searchOfflineDocuments(documents: OfflineLegalDocument[], query: string) {
-  const terms = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
+export function searchOfflineDocuments(documents: OfflineLegalDocument[], query: string): OfflineSearchResult[] {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const terms = normalizedQuery.split(/\\s+/).filter(Boolean);
   if (!terms.length) return [];
-  return documents.flatMap((document) => {
+  const results: OfflineSearchResult[] = [];
+
+  for (const document of documents) {
+    const titleMatch = document.title.toLocaleLowerCase().includes(normalizedQuery);
+    if (document.sections?.length) {
+      for (const section of document.sections) {
+        const lower = section.text.toLocaleLowerCase();
+        const matchedTerms = terms.filter((term) => lower.includes(term));
+        if (!matchedTerms.length && !titleMatch) continue;
+        const firstIndex = matchedTerms.length ? lower.indexOf(matchedTerms[0]) : 0;
+        const start = Math.max(0, firstIndex - 140);
+        const end = Math.min(section.text.length, firstIndex + 260);
+        results.push({
+          document,
+          matchedTerms: matchedTerms.length,
+          snippet: section.text.slice(start, end).replace(/\\s+/g, ' ').trim(),
+          sectionNumber: section.sectionNumber,
+          sectionHeading: section.heading,
+          sourceUrl: section.sourceUrl || document.sourceUrl
+        });
+      }
+      continue;
+    }
+
     const lower = document.text.toLocaleLowerCase();
-    const titleMatch = document.title.toLocaleLowerCase().includes(query.toLocaleLowerCase());
-    const matches = terms.filter((term) => lower.includes(term));
-    if (!titleMatch && matches.length === 0) return [];
-    const firstIndex = matches.length ? lower.indexOf(matches[0]) : 0;
+    const matchedTerms = terms.filter((term) => lower.includes(term));
+    if (!titleMatch && !matchedTerms.length) continue;
+    const firstIndex = matchedTerms.length ? lower.indexOf(matchedTerms[0]) : 0;
     const start = Math.max(0, firstIndex - 140);
     const end = Math.min(document.text.length, firstIndex + 260);
-    return [{
+    results.push({
       document,
-      matchedTerms: matches.length,
-      snippet: document.text.slice(start, end).replace(/\s+/g, ' ').trim()
-    }];
-  }).sort((a, b) => b.matchedTerms - a.matchedTerms);
+      matchedTerms: matchedTerms.length,
+      snippet: document.text.slice(start, end).replace(/\\s+/g, ' ').trim(),
+      sourceUrl: document.sourceUrl
+    });
+  }
+  return results.sort((a, b) => b.matchedTerms - a.matchedTerms);
 }
