@@ -143,9 +143,9 @@ export default function App() {
           <span className="brand-mark"><BookOpen size={21} /></span>
           <span><strong>NyayaAI</strong><small>Indian law, made clear</small></span>
         </a>
-        <button className="icon-button" onClick={() => setShowOfflineInfo(true)} aria-label="Offline mode information">
+        <div className="topbar-actions"><button className="language-toggle" onClick={() => setLanguage((current) => current === 'English' ? 'हिन्दी' : 'English')} aria-label="Switch language">{language === 'English' ? 'हिन्दी' : 'EN'}</button><button className="icon-button" onClick={() => setShowOfflineInfo(true)} aria-label="Offline mode information">
           {online ? <Wifi size={19} /> : <WifiOff size={19} />}
-        </button>
+        </button></div>
       </header>
 
       <section className="hero">
