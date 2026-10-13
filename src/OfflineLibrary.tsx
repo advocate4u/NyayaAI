@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownToLine, ChevronRight, FileText, X } from 'lucide-react';
+import { ArrowDownToLine, ChevronRight, Download, FileText, X } from 'lucide-react';
 import { deleteOfflineDocument, listOfflineDocuments, parseLegalFile, saveOfflineDocument, searchOfflineDocuments, type OfflineLegalDocument } from './legalStore';
 
 type Props = { query: string };
@@ -36,6 +36,37 @@ export default function OfflineLibrary({ query }: Props) {
     }
   }
 
+
+  async function exportBackup() {
+    if (!documents.length) {
+      setMessage('There are no offline documents to export yet.');
+      return;
+    }
+    const filename = 'nyayaai-legal-library-' + new Date().toISOString().slice(0, 10) + '.json';
+    const payload = JSON.stringify(documents, null, 2);
+    const file = new File([payload], filename, { type: 'application/json' });
+    try {
+      if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'NyayaAI offline legal library backup' });
+        setMessage('Backup shared. Keep a copy somewhere safe; it contains your imported legal documents.');
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage('Backup export started. Keep the JSON file somewhere safe; it contains your imported legal documents.');
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        setMessage('Backup sharing was cancelled.');
+      } else {
+        setMessage('Could not export the backup in this browser. Try opening NyayaAI in Chrome.');
+      }
+    }
+  }
+
   async function removeDocument(id: string) {
     try {
       await deleteOfflineDocument(id);
@@ -50,7 +81,7 @@ export default function OfflineLibrary({ query }: Props) {
     <section className="content-section offline-library-section">
       <div className="section-heading">
         <div><span className="section-kicker">ON-DEVICE KNOWLEDGE BASE</span><h2>Offline legal library</h2></div>
-        <span className="result-count">{documents.length} imported</span>
+        <div className="library-heading-actions"><span className="result-count">{documents.length} imported</span><button className="save-button" type="button" disabled={!documents.length} onClick={() => { void exportBackup(); }}><Download size={14} /> Export backup</button></div>
       </div>
       <div className="library-card">
         <p className="profile-intro">Import a PDF, .txt file or structured .json file from an authoritative source. Selectable PDF text is extracted directly; scanned PDF pages use on-device OCR. Files stay in this browser on this device; nothing is uploaded. OCR language data may need a one-time internet download and can use significant memory on long PDFs.</p>
