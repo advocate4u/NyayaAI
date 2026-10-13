@@ -99,7 +99,7 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
         return { citation, heading, text: sectionText, ...(typeof item.sourceUrl === 'string' ? { sourceUrl: item.sourceUrl } : {}) };
       });
       const suppliedText = typeof value.text === 'string' ? value.text.trim() : '';
-      const text = suppliedText || sections.map((section) => `Section ${section.sectionNumber}: ${section.heading}\n${section.text}`).join('\n\n');
+      const text = suppliedText || sections.map((section) => `${section.citation}: ${section.heading}\n${section.text}`).join('\n\n');
       if (!title || !text) throw new Error('Each JSON document needs a title and either non-empty "text" or a "sections" array.');
       return {
         id: typeof value.id === 'string' && value.id.trim() ? value.id : `import-${Date.now()}-${index}`,
