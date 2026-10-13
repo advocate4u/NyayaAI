@@ -333,8 +333,8 @@ export default function App() {
       </section>
 \n      <section className="assistant-teaser">
         <div className="assistant-icon"><Languages size={23} /></div>
-        <div><span className="section-kicker">COMING NEXT</span><h2>Ask NyayaAI</h2><p>Source-cited answers in Hindi and English, with on-device AI planned for a later release.</p></div>
-        <span className="coming-soon">Soon</span>
+        <div><span className="section-kicker">NEXT DEVELOPMENT STAGE</span><h2>On-device AI model</h2><p>Offline evidence retrieval is now available. Next, connect a small local language model that drafts answers only from retrieved, cited legal passages.</p></div>
+        <span className="coming-soon">Planned</span>
       </section>
 
       <footer className="footer">
