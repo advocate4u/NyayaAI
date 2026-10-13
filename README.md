@@ -90,3 +90,10 @@ The Ask NyayaAI panel currently performs **offline evidence retrieval**, not gen
 NyayaAI now has an optional browser-local model path using [WebLLM](https://github.com/mlc-ai/web-llm) and WebGPU. The user must explicitly start model loading. The app chooses a small Qwen 0.5B instruct model if the installed WebLLM build exposes one, and caches model artifacts in browser IndexedDB. Initial download requires internet; future offline use depends on successful caching, browser storage retention, and WebGPU/device compatibility.
 
 This is an experimental starting point, not a promise that every Android browser or phone can run the model. The app keeps offline legal search available when WebGPU is unavailable. Model output is grounded in retrieved passages but can still be wrong; verify every citation and the current law.
+
+
+## Deploy to GitHub Pages
+
+A workflow is included at `.github/workflows/deploy-pages.yml`. In repository settings, open **Settings → Pages** and set the build/deployment source to **GitHub Actions**. Then merge the deployment workflow into `main`; the next push to `main` will build and deploy the PWA. The project base path is configured for `https://advocate4u.github.io/NyayaAI/` in GitHub Actions and remains `/` for local development.
+
+The first deployment requires an internet connection. Once the PWA assets and any selected local model are downloaded and cached, offline behavior depends on browser storage retention and device support.
