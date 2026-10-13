@@ -177,7 +177,7 @@ export default function LegalQuestionPanel() {
           <p>This uses a server-side model configured by the app owner. Your question and the retrieved passages below will be sent to that service. Do not submit confidential client details unless your deployment's privacy and retention terms permit it.</p>
           <button className="primary-button" type="button" disabled={onlineBusy || !submittedQuestion || results.length === 0} onClick={() => { void generateOnlineAnswer(); }}>{onlineBusy ? 'Generating online…' : 'Generate advanced answer'}</button>
           {onlineProgress && <p className="model-progress" role="status">{onlineProgress}</p>}
-        </div>
+        </div>}
         {modelAnswer && <article className="ai-answer">
           <div className="ai-answer-title"><strong>Local AI response</strong><span>{engine?.modelId}</span></div>
           <p className="ai-answer-warning">Review the citations and source text before relying on this generated answer. Imported documents are not independently verified.</p>
