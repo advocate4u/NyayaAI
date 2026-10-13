@@ -109,3 +109,8 @@ The Android wrapper uses Capacitor with app ID `in.nyayaai.app`. The build workf
 ## Scanned PDF OCR
 
 The offline legal library can OCR scanned/image-only PDF pages in the browser using Tesseract.js. Choose English or English + Hindi before import. Selectable text is extracted directly, and OCR is applied only to pages without embedded text. OCR language data may need a one-time download; offline OCR later depends on the browser retaining the downloaded language data. OCR accuracy depends on scan clarity and must be checked against the original legal document.
+
+
+## Offline library backup
+
+The Offline legal library includes an **Export backup** action. It exports imported documents, section text, source URLs and verification dates to a portable JSON file. On supported phones it offers the native share sheet; otherwise it starts a browser download. The existing JSON importer can import the exported array again. Backups may contain full legal documents and should be stored securely.
