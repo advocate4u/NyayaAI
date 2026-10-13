@@ -22,7 +22,8 @@ const JSON_IMPORT_TEMPLATE = {
       citation: 'Section 1 / Article 1 / paragraph 1',
       heading: 'Exact official heading',
       text: 'Paste the exact provision or paragraph from the official source. Preserve wording and punctuation.',
-      sourceUrl: 'https://paste-the-direct-official-provision-url-here'
+      sourceUrl: 'https://paste-the-direct-official-provision-url-here',
+      sourceDate: new Date().toISOString().slice(0, 10)
     }
   ]
 };
@@ -178,6 +179,7 @@ export default function OfflineLibrary({ query }: Props) {
             {query.trim() && documentMatches.map((match, index) => <div className="offline-match" key={document.id + '-' + (match.citation ?? 'document') + '-' + index}>
               <div className="offline-match-citation"><strong>{match.citation || document.title}{match.sectionHeading ? ' — ' + match.sectionHeading : ''}</strong>{(match.sourceUrl || document.sourceUrl) && <a href={match.sourceUrl || document.sourceUrl} target="_blank" rel="noreferrer">Source <ChevronRight size={13} /></a>}</div>
               <p className="offline-snippet">{match.snippet}{match.snippet.length >= 400 ? '…' : ''}</p>
+              <span className="offline-match-date">Provision source checked: {match.sourceDate || 'date not supplied'} · user-entered metadata, not independent verification</span>
             </div>)}
             <div className="offline-doc-bottom">
               {document.sourceUrl ? <a href={document.sourceUrl} target="_blank" rel="noreferrer">Open source <ChevronRight size={14} /></a> : <span>Source URL not supplied</span>}
