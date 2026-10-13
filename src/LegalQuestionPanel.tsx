@@ -53,8 +53,13 @@ export default function LegalQuestionPanel() {
         ''
       ])
     ].join('\n');
-    void navigator.clipboard?.writeText(context);
-    setMessage('Evidence pack prepared for copying. If clipboard access is blocked, select and copy the displayed source passages.');
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(context)
+        .then(() => setMessage('Cited evidence pack copied to the clipboard.'))
+        .catch(() => setMessage('Clipboard access was blocked. You can still copy the cited passages shown above.'));
+    } else {
+      setMessage('Clipboard access is not available in this browser. You can still copy the cited passages shown above.');
+    }
   }
 
   return (
