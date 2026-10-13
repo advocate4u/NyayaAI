@@ -85,7 +85,12 @@ export type OfflineSearchResult = {
 
 export async function parseLegalFile(
   file: File,
-  metadata: { sourceUrl?: string; sourceDate?: string } = {}
+  metadata: {
+    sourceUrl?: string;
+    sourceDate?: string;
+    ocrLanguage?: 'eng' | 'eng+hin';
+    onProgress?: (message: string) => void;
+  } = {}
 ): Promise<OfflineLegalDocument[]> {
   const importedAt = new Date().toISOString();
 
@@ -96,12 +101,42 @@ export async function parseLegalFile(
       const page = await pdf.getPage(pageNumber);
       const pageContent = await page.getTextContent();
       const pageText = pageContent.items.map((item) => ('str' in item ? item.str : '')).join(' ').replace(/\s+/g, ' ').trim();
-      if (pageText) pages.push(pageText);
+      pages.push(pageText);
     }
-    const text = pages.join('\n\n').trim();
-    if (!text) throw new Error('No selectable text was found in this PDF. It may be scanned; OCR support is not available yet.');
+
+    const scannedPages = pages.map((pageText, index) => pageText ? -1 : index).filter((index) => index >= 0);
+    if (scannedPages.length) {
+      metadata.onProgress?.('Scanned page(s) detected. Loading OCR language data; first use may need internet…');
+      const { createWorker } = await import('tesseract.js');
+      const worker = await createWorker(metadata.ocrLanguage ?? 'eng');
+      try {
+        for (const pageIndex of scannedPages) {
+          metadata.onProgress?.('Recognising scanned page ' + (pageIndex + 1) + ' of ' + pdf.numPages + '…');
+          const page = await pdf.getPage(pageIndex + 1);
+          const viewport = page.getViewport({ scale: 1.6 });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('Could not prepare a canvas for PDF OCR.');
+          await page.render({ canvasContext: context, viewport }).promise;
+          const recognition = await worker.recognize(canvas);
+          pages[pageIndex] = recognition.data.text.replace(/\s+/g, ' ').trim();
+          canvas.width = 0;
+          canvas.height = 0;
+        }
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : 'unknown OCR error';
+        throw new Error('OCR could not read this scanned PDF (' + reason + '). Try a clearer scan or import while connected so OCR language data can be cached.');
+      } finally {
+        await worker.terminate();
+      }
+    }
+
+    const text = pages.filter(Boolean).join('\n\n').trim();
+    if (!text) throw new Error('No text could be extracted. Try a clearer scan or a different OCR language.');
     return [{
-      id: `import-${Date.now()}-${file.size}`,
+      id: 'import-' + Date.now() + '-' + file.size,
       title: file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' '),
       actYear: '',
       sourceUrl: metadata.sourceUrl?.trim() ?? '',
