@@ -77,6 +77,7 @@ export async function deleteOfflineDocument(id: string): Promise<void> {
 export type OfflineSearchResult = {
   document: OfflineLegalDocument;
   matchedTerms: number;
+  relevanceScore: number;
   snippet: string;
   citation?: string;
   sectionHeading?: string;
@@ -201,20 +202,39 @@ export function searchOfflineDocuments(documents: OfflineLegalDocument[], query:
   const terms = normalizedQuery.split(/[^\p{L}\p{N}]+/u).filter((term) => term.length > 1 && !stopWords.has(term));
   if (!terms.length) return [];
   const results: OfflineSearchResult[] = [];
+  const countOccurrences = (text: string, term: string) => {
+    let count = 0;
+    let from = 0;
+    while (count < 4) {
+      const index = text.indexOf(term, from);
+      if (index < 0) break;
+      count += 1;
+      from = index + term.length;
+    }
+    return count;
+  };
 
   for (const document of documents) {
     const titleMatch = document.title.toLocaleLowerCase().includes(normalizedQuery);
     if (document.sections?.length) {
       for (const section of document.sections) {
         const lower = section.text.toLocaleLowerCase();
-        const matchedTerms = terms.filter((term) => lower.includes(term));
+        const heading = section.heading.toLocaleLowerCase();
+        const citationText = section.citation.toLocaleLowerCase();
+        const titleText = document.title.toLocaleLowerCase();
+        const matchedTerms = terms.filter((term) => lower.includes(term) || heading.includes(term) || citationText.includes(term) || titleText.includes(term));
         if (!matchedTerms.length && !titleMatch) continue;
+        const relevanceScore = matchedTerms.reduce((score, term) =>
+          score + countOccurrences(lower, term) + (heading.includes(term) ? 3 : 0) +
+          (citationText.includes(term) ? 4 : 0) + (titleText.includes(term) ? 5 : 0), 0) +
+          (normalizedQuery && (titleText.includes(normalizedQuery) || citationText.includes(normalizedQuery)) ? 8 : 0);
         const firstIndex = matchedTerms.length ? lower.indexOf(matchedTerms[0]) : 0;
         const start = Math.max(0, firstIndex - 140);
         const end = Math.min(section.text.length, firstIndex + 260);
         results.push({
           document,
           matchedTerms: matchedTerms.length,
+          relevanceScore,
           snippet: section.text.slice(start, end).replace(/\s+/g, ' ').trim(),
           citation: section.citation,
           sectionHeading: section.heading,
@@ -225,17 +245,22 @@ export function searchOfflineDocuments(documents: OfflineLegalDocument[], query:
     }
 
     const lower = document.text.toLocaleLowerCase();
-    const matchedTerms = terms.filter((term) => lower.includes(term));
+    const titleText = document.title.toLocaleLowerCase();
+    const matchedTerms = terms.filter((term) => lower.includes(term) || titleText.includes(term));
     if (!titleMatch && !matchedTerms.length) continue;
+    const relevanceScore = matchedTerms.reduce((score, term) =>
+      score + countOccurrences(lower, term) + (titleText.includes(term) ? 5 : 0), 0) +
+      (normalizedQuery && titleText.includes(normalizedQuery) ? 8 : 0);
     const firstIndex = matchedTerms.length ? lower.indexOf(matchedTerms[0]) : 0;
     const start = Math.max(0, firstIndex - 140);
     const end = Math.min(document.text.length, firstIndex + 260);
     results.push({
       document,
       matchedTerms: matchedTerms.length,
+      relevanceScore,
       snippet: document.text.slice(start, end).replace(/\s+/g, ' ').trim(),
       sourceUrl: document.sourceUrl
     });
   }
-  return results.sort((a, b) => b.matchedTerms - a.matchedTerms);
+  return results.sort((a, b) => b.relevanceScore - a.relevanceScore || b.matchedTerms - a.matchedTerms);
 }

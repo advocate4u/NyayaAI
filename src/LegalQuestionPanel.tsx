@@ -37,7 +37,7 @@ export default function LegalQuestionPanel() {
       setDocuments(library);
       setLoaded(true);
       setSubmittedQuestion(trimmed);
-      if (!library.length) setMessage('Your offline library is empty. Import verified legal text in the Offline legal library section first.');
+      if (!library.length) setMessage('Your offline library is empty. Import legal text in the Offline legal library section, then verify it against the official source.');
     } catch {
       setMessage('Could not read the local legal library in this browser.');
     } finally {
@@ -72,7 +72,8 @@ export default function LegalQuestionPanel() {
       const evidence = results.map((result, index) => [
         '[' + (index + 1) + '] ' + result.document.title + (result.citation ? ' — ' + result.citation : '') + (result.sectionHeading ? ' — ' + result.sectionHeading : ''),
         'Source URL: ' + (result.sourceUrl || result.document.sourceUrl || 'Not supplied'),
-        'Verification date: ' + (result.document.sourceDate || 'Not supplied'),
+        'User-entered source-check date: ' + (result.document.sourceDate || 'Not supplied'),
+        'NyayaAI authentication status: NOT INDEPENDENTLY VERIFIED. The source URL and date are user-supplied metadata, not a legal currency check.',
         'Passage: ' + result.snippet
       ].join('\n')).join('\n\n');
       const answer = await engine.answer(submittedQuestion, evidence);
@@ -95,7 +96,8 @@ export default function LegalQuestionPanel() {
       ...results.flatMap((result, index) => [
         '[' + (index + 1) + '] ' + result.document.title + (result.citation ? ' — ' + result.citation : '') + (result.sectionHeading ? ' — ' + result.sectionHeading : ''),
         'Source URL: ' + (result.sourceUrl || result.document.sourceUrl || 'Not supplied'),
-        'Verified date: ' + (result.document.sourceDate || 'Not supplied'),
+        'User-entered source-check date: ' + (result.document.sourceDate || 'Not supplied'),
+        'NyayaAI status: Not independently verified; check current official text, amendments, commencement and applicable rules.',
         result.snippet,
         ''
       ])
@@ -128,7 +130,7 @@ export default function LegalQuestionPanel() {
           {results.map((result, index) => <article className="evidence-card" key={result.document.id + '-' + (result.citation ?? 'document') + '-' + index}>
             <div className="evidence-card-title"><span className="evidence-number">{index + 1}</span><div><strong>{result.document.title}</strong><span>{result.citation ? result.citation : 'Document match'}{result.sectionHeading ? ' — ' + result.sectionHeading : ''}</span></div></div>
             <p>{result.snippet}</p>
-            <div className="evidence-source"><span>Verified date: {result.document.sourceDate || 'not supplied'}</span>{(result.sourceUrl || result.document.sourceUrl) && <a href={result.sourceUrl || result.document.sourceUrl} target="_blank" rel="noreferrer">Open source</a>}</div>
+            <div className="evidence-source"><span>Source checked by user: {result.document.sourceDate || 'date not supplied'}</span>{(result.sourceUrl || result.document.sourceUrl) && <a href={result.sourceUrl || result.document.sourceUrl} target="_blank" rel="noreferrer">Open source</a>}</div><p className="ai-answer-warning">NyayaAI has not independently authenticated this document or checked whether it reflects current law. Verify the provision, amendments and commencement against the official source.</p>
           </article>)}
           {results.length === 0 && loaded && <div className="empty-state"><BookOpen size={24} /><h3>No matching provision found</h3><p>Try different wording or import the relevant official legal text. No legal conclusion is inferred from an empty result.</p></div>}
         </div>}
