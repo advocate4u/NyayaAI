@@ -95,14 +95,14 @@ export async function parseLegalFile(
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
       const page = await pdf.getPage(pageNumber);
       const pageContent = await page.getTextContent();
-      const pageText = pageContent.items.map((item) => ('str' in item ? item.str : '')).join(' ').replace(/\\s+/g, ' ').trim();
+      const pageText = pageContent.items.map((item) => ('str' in item ? item.str : '')).join(' ').replace(/\s+/g, ' ').trim();
       if (pageText) pages.push(pageText);
     }
-    const text = pages.join('\\n\\n').trim();
+    const text = pages.join('\n\n').trim();
     if (!text) throw new Error('No selectable text was found in this PDF. It may be scanned; OCR support is not available yet.');
     return [{
       id: `import-${Date.now()}-${file.size}`,
-      title: file.name.replace(/\\.pdf$/i, '').replace(/[_-]+/g, ' '),
+      title: file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' '),
       actYear: '',
       sourceUrl: metadata.sourceUrl?.trim() ?? '',
       sourceDate: metadata.sourceDate?.trim() ?? '',
@@ -153,8 +153,8 @@ export async function parseLegalFile(
     id: `import-${Date.now()}-${file.size}`,
     title: file.name.replace(/\.txt$/i, '').replace(/[_-]+/g, ' '),
     actYear: '',
-    sourceUrl: '',
-    sourceDate: '',
+    sourceUrl: metadata.sourceUrl?.trim() ?? '',
+    sourceDate: metadata.sourceDate?.trim() ?? '',
     text,
     importedAt
   }];
