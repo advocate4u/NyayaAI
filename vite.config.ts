@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-const base = process.env.GITHUB_ACTIONS === 'true' ? '/NyayaAI/' : '/';
+const base = process.env.CAPACITOR_BUILD === 'true' ? './' : process.env.GITHUB_ACTIONS === 'true' ? '/NyayaAI/' : '/';
 
 export default defineConfig({
   base,
@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['nyayaai.svg'],
+      includeAssets: ['nyayaai-logo.png', 'nyayaai.svg'],
       manifest: {
         name: 'NyayaAI — Indian Law Assistant',
         short_name: 'NyayaAI',
@@ -21,7 +21,8 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: base,
         icons: [
-          { src: 'nyayaai.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }
+          { src: 'nyayaai-logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'nyayaai-logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
         ]
       },
       workbox: {
