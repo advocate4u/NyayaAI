@@ -10,6 +10,7 @@ export default function OfflineLibrary({ query }: Props) {
   const [busy, setBusy] = useState(false);
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceDate, setSourceDate] = useState('');
+  const [ocrLanguage, setOcrLanguage] = useState<'eng' | 'eng+hin'>('eng+hin');
   const matches = useMemo(() => searchOfflineDocuments(documents, query), [documents, query]);
   const visibleDocuments = useMemo(() => query.trim() ? documents.filter((document) => matches.some((match) => match.document.id === document.id)) : documents, [documents, matches, query]);
 
@@ -24,7 +25,7 @@ export default function OfflineLibrary({ query }: Props) {
     setBusy(true);
     setMessage('');
     try {
-      const parsed = await parseLegalFile(file, { sourceUrl, sourceDate });
+      const parsed = await parseLegalFile(file, { sourceUrl, sourceDate, ocrLanguage, onProgress: setMessage });
       for (const document of parsed) await saveOfflineDocument(document);
       setDocuments(await listOfflineDocuments());
       setMessage(`Imported ${parsed.length} document${parsed.length === 1 ? '' : 's'} to this device.`);
@@ -52,10 +53,11 @@ export default function OfflineLibrary({ query }: Props) {
         <span className="result-count">{documents.length} imported</span>
       </div>
       <div className="library-card">
-        <p className="profile-intro">Import a selectable-text PDF, .txt file or structured .json file obtained from an authoritative source. Files stay in this browser on this device; nothing is uploaded. Scanned image-only PDFs need OCR, which is not included yet.</p>
+        <p className="profile-intro">Import a PDF, .txt file or structured .json file from an authoritative source. Selectable PDF text is extracted directly; scanned PDF pages use on-device OCR. Files stay in this browser on this device; nothing is uploaded. OCR language data may need a one-time internet download and can use significant memory on long PDFs.</p>
         <div className="import-metadata">
           <label>Official source URL (optional)<input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://official-source.gov.in/…" /></label>
           <label>Verified on (optional)<input type="date" value={sourceDate} onChange={(event) => setSourceDate(event.target.value)} /></label>
+          <label>OCR language for scanned PDFs<select value={ocrLanguage} onChange={(event) => setOcrLanguage(event.target.value as 'eng' | 'eng+hin')}><option value="eng+hin">English + Hindi</option><option value="eng">English only</option></select></label>
         </div>
         <label className="file-picker">
           <ArrowDownToLine size={18} />
