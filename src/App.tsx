@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import OfflineLibrary from './OfflineLibrary';
+import LegalQuestionPanel from './LegalQuestionPanel';
 import {
   ArrowDownToLine, BookOpen, CheckCircle2, ChevronRight, FileText,
   Languages, Search, ShieldCheck, Wifi, WifiOff, X, PenLine, UserRound, Copy, ClipboardList
@@ -286,6 +287,7 @@ export default function App() {
 
 
       <OfflineLibrary query={query} />
+      <LegalQuestionPanel />
 
       <section className="content-section profile-section">
         <div className="section-heading">
