@@ -119,7 +119,7 @@ export async function parseLegalFile(
           canvas.height = Math.ceil(viewport.height);
           const context = canvas.getContext('2d');
           if (!context) throw new Error('Could not prepare a canvas for PDF OCR.');
-          await page.render({ canvasContext: context, viewport }).promise;
+          await page.render({ canvas, canvasContext: context, viewport }).promise;
           const recognition = await worker.recognize(canvas);
           pages[pageIndex] = recognition.data.text.replace(/\s+/g, ' ').trim();
           canvas.width = 0;
