@@ -10,7 +10,7 @@ a{color:inherit;text-decoration:none}
 .brand-mark{width:42px;height:42px;border-radius:14px;background:#102a43;color:#fff;display:grid;place-items:center}
 .brand strong{display:block;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:19px;letter-spacing:-.6px}
 .brand small{display:block;color:#728294;font-size:11px;margin-top:2px}
-.icon-button{width:42px;height:42px;border:1px solid #dfe7ed;border-radius:14px;background:#fff;color:#31546b;display:grid;place-items:center}
+.topbar-actions{display:flex;align-items:center;gap:8px}.language-toggle{height:42px;min-width:42px;padding:0 12px;border:1px solid #dfe7ed;border-radius:14px;background:#fff;color:#31546b;font-weight:700;font-size:12px}.icon-button{width:42px;height:42px;border:1px solid #dfe7ed;border-radius:14px;background:#fff;color:#31546b;display:grid;place-items:center}
 .hero{padding:54px 0 34px}
 .eyebrow,.section-kicker{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#44756e}
 .eyebrow{display:flex;align-items:center;gap:9px}
