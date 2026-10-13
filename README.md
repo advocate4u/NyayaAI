@@ -77,12 +77,12 @@ The current app can extract selectable text from `.pdf` files and import `.txt` 
 }
 ```
 
-The example above is a schema example, not legal content. Preserve the actual official source URL and the date you verified the text. Section citations are only as reliable as the imported data.
+The example above is a schema example, not legal content. Preserve the actual official source URL and the date you checked the text. NyayaAI treats all imported documents as **not independently verified**, even when a source URL/date is present: those fields are user-supplied metadata, not an automated authenticity, amendment, commencement or currency check. Section citations are only as reliable as the imported data.
 
 
 ## Current question-answering status
 
-The Ask NyayaAI panel currently performs **offline evidence retrieval**, not generative AI. It returns matching imported provisions with their citation labels, source URLs and verification dates, and can copy a cited evidence pack. The next AI milestone is to run a small on-device model against this retrieved context, with strict instructions to cite sources and abstain when evidence is insufficient.
+The Ask NyayaAI panel currently performs **offline evidence retrieval**, not generative AI. It returns matching imported provisions with citation labels and source URLs, ranks stronger title/section matches higher, and can copy a cited evidence pack. The interface explicitly labels the date as user-entered and warns that NyayaAI has not independently verified authenticity or current legal status. The next AI milestone is to run a small on-device model against this retrieved context, with strict instructions to cite sources and abstain when evidence is insufficient.
 
 
 ## Optional on-device AI
