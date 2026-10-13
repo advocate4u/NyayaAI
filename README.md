@@ -114,3 +114,8 @@ The offline legal library can OCR scanned/image-only PDF pages in the browser us
 ## Offline library backup
 
 The Offline legal library includes an **Export backup** action. It exports imported documents, section text, source URLs and verification dates to a portable JSON file. On supported phones it offers the native share sheet; otherwise it starts a browser download. The existing JSON importer can import the exported array again. Backups may contain full legal documents and should be stored securely.
+
+
+## Import validation and restore safety
+
+Imports are limited to 50 MB per file. Optional source URLs and per-section URLs must use HTTP or HTTPS, and source-check dates must be real dates in YYYY-MM-DD format. JSON backup files can be restored through the same import control. Restore skips duplicate title/source pairs (or identical title/text when no source URL exists) and preserves existing documents instead of overwriting them on an ID collision. These checks improve import safety; they do not authenticate legal sources or verify that a law is current.
