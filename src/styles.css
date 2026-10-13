@@ -171,3 +171,7 @@ h1 em{font-style:normal;color:#26796e}
 .ai-answer-title span{font-size:9px;color:#71877f;overflow-wrap:anywhere;text-align:right}
 .ai-answer-warning{font-size:10px;line-height:1.6;color:#896d39;background:#fff9e9;padding:10px 14px;margin:0}
 .ai-answer-text{padding:15px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.8;color:#344f5e}
+
+
+.import-metadata select{width:100%;min-width:0;border:1px solid #dfe7ed;border-radius:10px;background:#f8fafb;color:#203b4e;padding:10px 11px;font:inherit;font-size:11px;font-weight:400;outline:none}
+.import-metadata select:focus{border-color:#6aa89b;box-shadow:0 0 0 3px #e3f2ed}
