@@ -1,6 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
-
-:root{font-family:'DM Sans',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#152b3b;background:#f5f7fa;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;font-optical-sizing:auto;font-weight:400;font-size:15px}
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#152b3b;background:#f5f7fa;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;font-optical-sizing:auto;font-weight:400;font-size:15px}
 *{box-sizing:border-box}
 body{margin:0;min-width:320px;min-height:100vh}
 button,input,a{font:inherit}
@@ -10,7 +8,7 @@ a{color:inherit;text-decoration:none}
 .topbar{height:78px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e3e9ef}
 .brand{display:flex;align-items:center;gap:11px}
 .brand-mark{width:42px;height:42px;border-radius:14px;background:#102a43;color:#fff;display:grid;place-items:center}
-.brand strong{display:block;font-family:Manrope,sans-serif;font-size:19px;letter-spacing:-.6px}
+.brand strong{display:block;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:19px;letter-spacing:-.6px}
 .brand small{display:block;color:#728294;font-size:11px;margin-top:2px}
 .icon-button{width:42px;height:42px;border:1px solid #dfe7ed;border-radius:14px;background:#fff;color:#31546b;display:grid;place-items:center}
 .hero{padding:54px 0 34px}
