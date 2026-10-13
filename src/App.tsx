@@ -1,0 +1,232 @@
+import { useMemo, useState } from 'react';
+import {
+  ArrowDownToLine, BookOpen, CheckCircle2, ChevronRight, FileText,
+  Languages, Search, ShieldCheck, Wifi, WifiOff, X
+} from 'lucide-react';
+
+type LegalSource = {
+  id: string;
+  title: string;
+  shortTitle: string;
+  category: string;
+  summary: string;
+  keywords: string[];
+  url: string;
+  language: string;
+};
+
+const sources: LegalSource[] = [
+  {
+    id: 'constitution',
+    title: 'Constitution of India',
+    shortTitle: 'Constitution',
+    category: 'Constitutional law',
+    summary: 'The constitutional framework of India, including fundamental rights, institutions and governance.',
+    keywords: ['constitution', 'fundamental rights', 'article', 'writ', 'equality', 'liberty', 'संविधान', 'मौलिक अधिकार'],
+    url: 'https://www.indiacode.nic.in/',
+    language: 'English'
+  },
+  {
+    id: 'bns',
+    title: 'Bharatiya Nyaya Sanhita, 2023',
+    shortTitle: 'BNS, 2023',
+    category: 'Criminal law',
+    summary: 'India’s principal criminal offences statute, subject to applicable commencement provisions and amendments.',
+    keywords: ['bns', 'criminal law', 'offence', 'theft', 'assault', 'murder', 'भारतीय न्याय संहिता', 'अपराध'],
+    url: 'https://www.indiacode.nic.in/',
+    language: 'English'
+  },
+  {
+    id: 'bnss',
+    title: 'Bharatiya Nagarik Suraksha Sanhita, 2023',
+    shortTitle: 'BNSS, 2023',
+    category: 'Criminal procedure',
+    summary: 'Criminal procedure framework; check the relevant date, exceptions and transitional provisions.',
+    keywords: ['bnss', 'bail', 'arrest', 'fir', 'investigation', 'criminal procedure', 'जमानत', 'गिरफ्तारी', 'एफआईआर'],
+    url: 'https://www.indiacode.nic.in/',
+    language: 'English'
+  },
+  {
+    id: 'bsa',
+    title: 'Bharatiya Sakshya Adhiniyam, 2023',
+    shortTitle: 'BSA, 2023',
+    category: 'Evidence law',
+    summary: 'Evidence law, including rules relevant to documentary and electronic evidence.',
+    keywords: ['bsa', 'evidence', 'electronic evidence', 'document', 'admissibility', 'साक्ष्य', 'इलेक्ट्रॉनिक साक्ष्य'],
+    url: 'https://www.indiacode.nic.in/',
+    language: 'English'
+  },
+  {
+    id: 'cpc',
+    title: 'Code of Civil Procedure, 1908',
+    shortTitle: 'CPC, 1908',
+    category: 'Civil procedure',
+    summary: 'Procedural framework for civil suits, pleadings, interim relief and execution, subject to amendments and local rules.',
+    keywords: ['cpc', 'civil suit', 'injunction', 'plaint', 'execution', 'दीवानी', 'स्थगन आदेश'],
+    url: 'https://www.indiacode.nic.in/',
+    language: 'English'
+  },
+  {
+    id: 'contract',
+    title: 'Indian Contract Act, 1872',
+    shortTitle: 'Contract Act',
+    category: 'Contract law',
+    summary: 'Core statutory framework for contracts, including agreement, consideration and contractual obligations.',
+    keywords: ['contract', 'agreement', 'consideration', 'breach', 'damages', 'अनुबंध', 'समझौता'],
+    url: 'https://www.indiacode.nic.in/',
+    language: 'English'
+  },
+  {
+    id: 'consumer',
+    title: 'Consumer Protection Act, 2019',
+    shortTitle: 'Consumer Protection',
+    category: 'Consumer law',
+    summary: 'Consumer rights and statutory mechanisms for addressing consumer disputes.',
+    keywords: ['consumer', 'deficiency', 'product liability', 'refund', 'unfair trade', 'उपभोक्ता', 'सेवा में कमी'],
+    url: 'https://www.indiacode.nic.in/',
+    language: 'English'
+  },
+  {
+    id: 'ni-act',
+    title: 'Negotiable Instruments Act, 1881',
+    shortTitle: 'NI Act',
+    category: 'Commercial law',
+    summary: 'Includes statutory provisions concerning negotiable instruments and cheque dishonour.',
+    keywords: ['negotiable instruments', 'cheque', 'section 138', 'dishonour', 'चेक बाउंस', 'धारा 138'],
+    url: 'https://www.indiacode.nic.in/',
+    language: 'English'
+  }
+];
+
+const quickQuestions = [
+  { label: 'Bail & arrest', query: 'bail arrest BNSS जमानत' },
+  { label: 'Fundamental rights', query: 'fundamental rights Constitution मौलिक अधिकार' },
+  { label: 'Cheque dishonour', query: 'section 138 cheque dishonour चेक बाउंस' },
+  { label: 'Consumer complaint', query: 'consumer deficiency refund उपभोक्ता' }
+];
+
+export default function App() {
+  const [query, setQuery] = useState('');
+  const [language, setLanguage] = useState<'English' | 'हिन्दी'>('English');
+  const [showOfflineInfo, setShowOfflineInfo] = useState(false);
+  const [saved, setSaved] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('nyayaai-saved') ?? '[]') as string[]; }
+    catch { return []; }
+  });
+  const [online] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
+
+  const results = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    if (!normalized) return sources;
+    const terms = normalized.split(/\s+/).filter(Boolean);
+    return sources.filter((source) => {
+      const searchable = [source.title, source.shortTitle, source.category, source.summary, ...source.keywords]
+        .join(' ').toLocaleLowerCase();
+      return terms.some((term) => searchable.includes(term));
+    });
+  }, [query]);
+
+  function toggleSaved(id: string) {
+    setSaved((current) => {
+      const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
+      localStorage.setItem('nyayaai-saved', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  const savedSources = sources.filter((source) => saved.includes(source.id));
+
+  return (
+    <main className="app-shell">
+      <header className="topbar">
+        <a className="brand" href="#" aria-label="NyayaAI home">
+          <span className="brand-mark"><BookOpen size={21} /></span>
+          <span><strong>NyayaAI</strong><small>Indian law, made clear</small></span>
+        </a>
+        <button className="icon-button" onClick={() => setShowOfflineInfo(true)} aria-label="Offline mode information">
+          {online ? <Wifi size={19} /> : <WifiOff size={19} />}
+        </button>
+      </header>
+
+      <section className="hero">
+        <div className="eyebrow"><span className="pulse" /> FREE • PRIVATE • OFFLINE-FIRST</div>
+        <h1>{language === 'English' ? <>Understand the law.<br /><em>Know your rights.</em></> : <>कानून को समझें।<br /><em>अपने अधिकार जानें।</em></>}</h1>
+        <p>{language === 'English'
+          ? 'Search Indian Acts and legal topics in plain language. Built to keep your research close to you.'
+          : 'भारतीय कानून और कानूनी विषयों को सरल भाषा में खोजें। आपकी रिसर्च, आपके डिवाइस पर।'}</p>
+        <div className="hero-meta">
+          <span><ShieldCheck size={15} /> Source-first research</span>
+          <span><WifiOff size={15} /> Offline-ready shell</span>
+        </div>
+      </section>
+
+      <section className="search-panel" aria-label="Search legal sources">
+        <label htmlFor="legal-search">What would you like to understand?</label>
+        <div className="search-box">
+          <Search size={20} />
+          <input id="legal-search" value={query} onChange={(event) => setQuery(event.target.value)}
+            placeholder="Try “bail”, “Article 21”, “चेक बाउंस”…" />
+          {query && <button className="clear-button" onClick={() => setQuery('')} aria-label="Clear search"><X size={17} /></button>}
+        </div>
+        <div className="quick-searches">
+          {quickQuestions.map((item) => <button key={item.label} onClick={() => setQuery(item.query)}>{item.label}<ChevronRight size={14} /></button>)}
+        </div>
+      </section>
+
+      <section className="content-section">
+        <div className="section-heading">
+          <div><span className="section-kicker">LEGAL LIBRARY</span><h2>{query ? 'Search results' : 'Explore Indian law'}</h2></div>
+          <span className="result-count">{results.length} sources</span>
+        </div>
+        <div className="source-list">
+          {results.map((source) => (
+            <article className="source-card" key={source.id}>
+              <div className="source-icon"><FileText size={21} /></div>
+              <div className="source-body">
+                <span className="category">{source.category}</span>
+                <h3>{source.title}</h3>
+                <p>{source.summary}</p>
+                <div className="source-actions">
+                  <a href={source.url} target="_blank" rel="noreferrer">Find official text <ChevronRight size={15} /></a>
+                  <button onClick={() => toggleSaved(source.id)} className={saved.includes(source.id) ? 'save-button saved' : 'save-button'}>
+                    {saved.includes(source.id) ? <CheckCircle2 size={15} /> : <ArrowDownToLine size={15} />}
+                    {saved.includes(source.id) ? 'Saved' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+          {results.length === 0 && <div className="empty-state"><Search size={28} /><h3>No matching source yet</h3><p>Try a legal topic, Act name or a shorter keyword in English or Hindi.</p></div>}
+        </div>
+      </section>
+
+      {savedSources.length > 0 && <section className="content-section saved-section">
+        <div className="section-heading"><div><span className="section-kicker">ON THIS DEVICE</span><h2>Saved sources</h2></div><span className="result-count">{savedSources.length} saved</span></div>
+        <div className="saved-chips">{savedSources.map((source) => <button key={source.id} onClick={() => setQuery(source.shortTitle)}>{source.shortTitle}</button>)}</div>
+      </section>}
+
+      <section className="assistant-teaser">
+        <div className="assistant-icon"><Languages size={23} /></div>
+        <div><span className="section-kicker">COMING NEXT</span><h2>Ask NyayaAI</h2><p>Source-cited answers in Hindi and English, with on-device AI planned for a later release.</p></div>
+        <span className="coming-soon">Soon</span>
+      </section>
+
+      <footer className="footer">
+        <div className="footer-brand"><BookOpen size={17} /><strong>NyayaAI</strong><span>v0.1 foundation</span></div>
+        <p>For legal research and education only. Verify the current law, amendments, local rules and case record before relying on any information.</p>
+        <a href="https://www.indiacode.nic.in/" target="_blank" rel="noreferrer">Official legislation portal <ChevronRight size={14} /></a>
+      </footer>
+
+      {showOfflineInfo && <div className="modal-backdrop" role="presentation" onClick={() => setShowOfflineInfo(false)}>
+        <section className="info-modal" role="dialog" aria-modal="true" aria-labelledby="offline-title" onClick={(event) => event.stopPropagation()}>
+          <button className="modal-close" onClick={() => setShowOfflineInfo(false)} aria-label="Close"><X size={19} /></button>
+          <div className="modal-icon"><WifiOff size={24} /></div>
+          <h2 id="offline-title">Built for offline use</h2>
+          <p>The app shell is configured for install and offline caching. This first milestone contains a small built-in index, not the full text of Acts or an AI model.</p>
+          <ul><li>Search the bundled index after the app has loaded.</li><li>Saved items stay in this browser on this device.</li><li>Official source links require internet access.</li><li>Downloading verified legal text and on-device AI are next milestones.</li></ul>
+          <button className="primary-button" onClick={() => setShowOfflineInfo(false)}>Understood</button>
+        </section>
+      </div>}
+    </main>
+  );
+}
