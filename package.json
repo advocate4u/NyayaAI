@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --pretty"
+    "typecheck": "tsc -b --pretty",
+    "prebuild": "node scripts/prepare-branding.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -17,11 +18,14 @@
     "vite": "latest",
     "vite-plugin-pwa": "latest",
     "pdfjs-dist": "latest",
-    "@mlc-ai/web-llm": "latest"
+    "@mlc-ai/web-llm": "latest",
+    "@capacitor/core": "latest",
+    "@capacitor/android": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "@capacitor/cli": "latest"
   }
 }
