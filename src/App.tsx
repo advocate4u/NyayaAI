@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import OfflineLibrary from './OfflineLibrary';
 import {
   ArrowDownToLine, BookOpen, CheckCircle2, ChevronRight, FileText,
   Languages, Search, ShieldCheck, Wifi, WifiOff, X, PenLine, UserRound, Copy, ClipboardList
@@ -283,6 +284,8 @@ export default function App() {
         <div className="saved-chips">{savedSources.map((source) => <button key={source.id} onClick={() => setQuery(source.shortTitle)}>{source.shortTitle}</button>)}</div>
       </section>}
 
+
+      <OfflineLibrary query={query} />
 
       <section className="content-section profile-section">
         <div className="section-heading">
