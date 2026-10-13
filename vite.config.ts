@@ -17,7 +17,9 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
-        icons: [\n          { src: '/nyayaai.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }\n        ]
+        icons: [
+          { src: '/nyayaai.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }
+        ]
       },
       workbox: {
         navigateFallback: 'index.html',
