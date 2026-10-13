@@ -175,3 +175,9 @@ h1 em{font-style:normal;color:#26796e}
 
 .import-metadata select{width:100%;min-width:0;border:1px solid #dfe7ed;border-radius:10px;background:#f8fafb;color:#203b4e;padding:10px 11px;font:inherit;font-size:11px;font-weight:400;outline:none}
 .import-metadata select:focus{border-color:#6aa89b;box-shadow:0 0 0 3px #e3f2ed}
+
+
+.library-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.library-heading-actions .save-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.library-heading-actions .save-button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:480px){.library-heading-actions{align-items:flex-end;flex-direction:column;gap:6px}.library-heading-actions .save-button{font-size:10px;padding:8px 10px}}
