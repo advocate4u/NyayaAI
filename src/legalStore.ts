@@ -162,7 +162,8 @@ export async function parseLegalFile(
 
 export function searchOfflineDocuments(documents: OfflineLegalDocument[], query: string): OfflineSearchResult[] {
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const terms = normalizedQuery.split(/\s+/).filter(Boolean);
+  const stopWords = new Set(['what', 'does', 'the', 'is', 'are', 'how', 'can', 'i', 'my', 'about', 'under', 'explain', 'please', 'tell', 'me', 'this', 'that', 'for', 'of', 'and', 'to', 'in', 'on', 'with', 'as', 'at', 'a', 'an', 'it', 'law', 'legal', 'section', 'article', 'rule', 'क्या', 'है', 'के', 'की', 'का', 'में', 'और', 'कैसे', 'बताएं', 'मुझे']);
+  const terms = normalizedQuery.split(/[^\p{L}\p{N}]+/u).filter((term) => term.length > 1 && !stopWords.has(term));
   if (!terms.length) return [];
   const results: OfflineSearchResult[] = [];
 

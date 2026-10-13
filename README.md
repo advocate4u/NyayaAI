@@ -27,7 +27,7 @@ NyayaAI aims to help people explore Indian legislation and legal materials in pl
 1. Responsive app shell and legal search experience.
 2. PWA installation and offline app shell.
 3. Section-aware legal document ingestion with source URLs and update dates.
-4. Citation-grounded question answering over imported, verified legal text.
+4. Source-grounded offline question retrieval over imported legal text (implemented); AI answer synthesis from cited passages.
 5. Android on-device model integration and offline tests.
 6. Hindi/English quality, security, and legal accuracy evaluation.
 
@@ -77,3 +77,8 @@ The current app can extract selectable text from `.pdf` files and import `.txt` 
 ```
 
 The example above is a schema example, not legal content. Preserve the actual official source URL and the date you verified the text. Section citations are only as reliable as the imported data.
+
+
+## Current question-answering status
+
+The Ask NyayaAI panel currently performs **offline evidence retrieval**, not generative AI. It returns matching imported provisions with their citation labels, source URLs and verification dates, and can copy a cited evidence pack. The next AI milestone is to run a small on-device model against this retrieved context, with strict instructions to cite sources and abstain when evidence is insufficient.
