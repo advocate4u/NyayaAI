@@ -1,0 +1,96 @@
+name: Build NyayaAI Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: false
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build mobile web app
+        env:
+          CAPACITOR_BUILD: 'true'
+        run: npm run build
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Apply Logo.png as Android launcher icon
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          set -e
+          for entry in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
+            density="${entry%%:*}"
+            pixels="${entry##*:}"
+            folder="android/app/src/main/res/mipmap-${density}"
+            mkdir -p "$folder"
+            convert Logo.png -resize "${pixels}x${pixels}" -gravity center -background white -alpha remove -alpha off "$folder/ic_launcher.png"
+            convert Logo.png -resize "${pixels}x${pixels}" -gravity center -background white -alpha remove -alpha off "$folder/ic_launcher_round.png"
+          done
+          # Remove adaptive-icon XML templates so Android selects the supplied density-specific PNGs.
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+
+      - name: Sync Capacitor Android project
+        run: npx cap sync android
+
+      - name: Assemble debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NyayaAI-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish APK release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-build-${{ github.run_number }}
+          name: NyayaAI Android APK — build ${{ github.run_number }}
+          body: |
+            Automated debug APK for NyayaAI from commit ${{ github.sha }}.
+
+            Install only if you trust this build. Android may ask you to allow installation from this source.
+            This is an unsigned debug build for testing, not a Play Store release.
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: true
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

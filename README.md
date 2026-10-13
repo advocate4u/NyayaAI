@@ -97,3 +97,10 @@ This is an experimental starting point, not a promise that every Android browser
 A workflow is included at `.github/workflows/deploy-pages.yml`. In repository settings, open **Settings → Pages** and set the build/deployment source to **GitHub Actions**. Then merge the deployment workflow into `main`; the next push to `main` will build and deploy the PWA. The project base path is configured for `https://advocate4u.github.io/NyayaAI/` in GitHub Actions and remains `/` for local development.
 
 The first deployment requires an internet connection. Once the PWA assets and any selected local model are downloaded and cached, offline behavior depends on browser storage retention and device support.
+
+
+## Android APK (Logo.png branding)
+
+The Android wrapper uses Capacitor with app ID `in.nyayaai.app`. The build workflow copies the repository's `Logo.png` into the PWA branding assets and generates Android launcher icon sizes from that same image. The APK workflow runs on pull requests, pushes to `main`, and manual dispatch. Successful main-branch builds publish a test/debug APK as a GitHub prerelease asset and a 30-day Actions artifact.
+
+**APK type:** unsigned debug APK for testing, not a Play Store-signed release. On Android, download `app-debug.apk`, permit installation from the browser if prompted, and install. Back up any important offline library before changing app versions. Android WebView/WebGPU support and offline model performance vary by device.
