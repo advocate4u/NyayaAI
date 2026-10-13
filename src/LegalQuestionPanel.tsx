@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import { BookOpen, ClipboardList, Copy, Info, Search } from 'lucide-react';
 import { listOfflineDocuments, searchOfflineDocuments, type OfflineLegalDocument, type OfflineSearchResult } from './legalStore';
 
@@ -15,7 +16,7 @@ export default function LegalQuestionPanel() {
     [documents, submittedQuestion]
   );
 
-  async function askQuestion(event: React.FormEvent<HTMLFormElement>) {
+  async function askQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = question.trim();
     if (!trimmed) {
