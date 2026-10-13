@@ -71,7 +71,7 @@ export default function LegalQuestionPanel() {
     return results.map((result, index) => [
       '[' + (index + 1) + '] ' + result.document.title + (result.citation ? ' — ' + result.citation : '') + (result.sectionHeading ? ' — ' + result.sectionHeading : ''),
       'Source URL: ' + (result.sourceUrl || result.document.sourceUrl || 'Not supplied'),
-      'User-entered source-check date: ' + (result.document.sourceDate || 'Not supplied'),
+      'User-entered source-check date: ' + (result.sourceDate || result.document.sourceDate || 'Not supplied'),
       'NyayaAI authentication status: NOT INDEPENDENTLY VERIFIED. The source URL and date are user-supplied metadata, not a legal currency check.',
       'Passage: ' + result.snippet
     ].join('\n')).join('\n\n');
@@ -126,7 +126,7 @@ export default function LegalQuestionPanel() {
       ...results.flatMap((result, index) => [
         '[' + (index + 1) + '] ' + result.document.title + (result.citation ? ' — ' + result.citation : '') + (result.sectionHeading ? ' — ' + result.sectionHeading : ''),
         'Source URL: ' + (result.sourceUrl || result.document.sourceUrl || 'Not supplied'),
-        'User-entered source-check date: ' + (result.document.sourceDate || 'Not supplied'),
+        'User-entered source-check date: ' + (result.sourceDate || result.document.sourceDate || 'Not supplied'),
         'NyayaAI status: Not independently verified; check current official text, amendments, commencement and applicable rules.',
         result.snippet,
         ''
