@@ -99,7 +99,7 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
         return { sectionNumber, heading, text: sectionText, ...(typeof item.sourceUrl === 'string' ? { sourceUrl: item.sourceUrl } : {}) };
       });
       const suppliedText = typeof value.text === 'string' ? value.text.trim() : '';
-      const text = suppliedText || sections.map((section) => `Section ${section.sectionNumber}: ${section.heading}\\n${section.text}`).join('\\n\\n');
+      const text = suppliedText || sections.map((section) => `Section ${section.sectionNumber}: ${section.heading}\n${section.text}`).join('\n\n');
       if (!title || !text) throw new Error('Each JSON document needs a title and either non-empty "text" or a "sections" array.');
       return {
         id: typeof value.id === 'string' && value.id.trim() ? value.id : `import-${Date.now()}-${index}`,
@@ -131,7 +131,7 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
 
 export function searchOfflineDocuments(documents: OfflineLegalDocument[], query: string): OfflineSearchResult[] {
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const terms = normalizedQuery.split(/\\s+/).filter(Boolean);
+  const terms = normalizedQuery.split(/\s+/).filter(Boolean);
   if (!terms.length) return [];
   const results: OfflineSearchResult[] = [];
 
@@ -148,7 +148,7 @@ export function searchOfflineDocuments(documents: OfflineLegalDocument[], query:
         results.push({
           document,
           matchedTerms: matchedTerms.length,
-          snippet: section.text.slice(start, end).replace(/\\s+/g, ' ').trim(),
+          snippet: section.text.slice(start, end).replace(/\s+/g, ' ').trim(),
           sectionNumber: section.sectionNumber,
           sectionHeading: section.heading,
           sourceUrl: section.sourceUrl || document.sourceUrl
@@ -166,7 +166,7 @@ export function searchOfflineDocuments(documents: OfflineLegalDocument[], query:
     results.push({
       document,
       matchedTerms: matchedTerms.length,
-      snippet: document.text.slice(start, end).replace(/\\s+/g, ' ').trim(),
+      snippet: document.text.slice(start, end).replace(/\s+/g, ' ').trim(),
       sourceUrl: document.sourceUrl
     });
   }
