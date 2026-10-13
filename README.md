@@ -27,8 +27,9 @@ NyayaAI aims to help people explore Indian legislation and legal materials in pl
 1. Responsive app shell and legal search experience.
 2. PWA installation and offline app shell.
 3. Section-aware legal document ingestion with source URLs and update dates.
-4. Source-grounded offline question retrieval over imported legal text (implemented); AI answer synthesis from cited passages.
-5. Android on-device model integration and offline tests.
+4. Source-grounded offline question retrieval over imported legal text.
+5. Optional browser-local AI using WebLLM/WebGPU; first model download requires internet and sufficient storage.
+6. Android on-device model integration and offline tests.
 6. Hindi/English quality, security, and legal accuracy evaluation.
 
 ## Development
@@ -82,3 +83,10 @@ The example above is a schema example, not legal content. Preserve the actual of
 ## Current question-answering status
 
 The Ask NyayaAI panel currently performs **offline evidence retrieval**, not generative AI. It returns matching imported provisions with their citation labels, source URLs and verification dates, and can copy a cited evidence pack. The next AI milestone is to run a small on-device model against this retrieved context, with strict instructions to cite sources and abstain when evidence is insufficient.
+
+
+## Optional on-device AI
+
+NyayaAI now has an optional browser-local model path using [WebLLM](https://github.com/mlc-ai/web-llm) and WebGPU. The user must explicitly start model loading. The app chooses a small Qwen 0.5B instruct model if the installed WebLLM build exposes one, and caches model artifacts in browser IndexedDB. Initial download requires internet; future offline use depends on successful caching, browser storage retention, and WebGPU/device compatibility.
+
+This is an experimental starting point, not a promise that every Android browser or phone can run the model. The app keeps offline legal search available when WebGPU is unavailable. Model output is grounded in retrieved passages but can still be wrong; verify every citation and the current law.
