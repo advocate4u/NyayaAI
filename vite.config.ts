@@ -22,6 +22,7 @@ export default defineConfig({
         ]
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: 'index.html',
         globPatterns: ['**/*.{js,mjs,css,html,svg,png,webp,ico}']
       }

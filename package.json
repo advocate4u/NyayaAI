@@ -16,7 +16,8 @@
     "react-dom": "latest",
     "vite": "latest",
     "vite-plugin-pwa": "latest",
-    "pdfjs-dist": "latest"
+    "pdfjs-dist": "latest",
+    "@mlc-ai/web-llm": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",
