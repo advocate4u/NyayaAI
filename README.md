@@ -26,8 +26,8 @@ NyayaAI aims to help people explore Indian legislation and legal materials in pl
 
 1. Responsive app shell and legal search experience.
 2. PWA installation and offline app shell.
-3. Legal document ingestion with provenance and update dates.
-4. Citation-grounded question answering.
+3. Section-aware legal document ingestion with source URLs and update dates.
+4. Citation-grounded question answering over imported, verified legal text.
 5. Android on-device model integration and offline tests.
 6. Hindi/English quality, security, and legal accuracy evaluation.
 
@@ -54,3 +54,26 @@ Only ingest materials from sources whose access and reuse terms permit the inten
 ## Status
 
 Early scaffold. No legal corpus or generative AI model is bundled yet. Offline search and on-device AI will be added in later milestones.
+
+## Importing legal text for offline search
+
+The current app can import `.txt` files or structured `.json` files. Imported data is stored in the browser's IndexedDB on the current device and is not uploaded. JSON can contain a full-text document or section-level chunks:
+
+```json
+{
+  "title": "Example Act, 2024",
+  "actYear": "2024",
+  "sourceUrl": "https://official-source.example/act",
+  "sourceDate": "2026-10-13",
+  "sections": [
+    {
+      "citation": "Section 1",
+      "heading": "Title and commencement",
+      "text": "Paste the verified text of this section here.",
+      "sourceUrl": "https://official-source.example/act#section-1"
+    }
+  ]
+}
+```
+
+The example above is a schema example, not legal content. Preserve the actual official source URL and the date you verified the text. Section citations are only as reliable as the imported data.

@@ -58,21 +58,23 @@ export default function OfflineLibrary({ query }: Props) {
         </label>
         <details className="json-help">
           <summary>JSON format for structured legal text</summary>
-          <pre>{'{\n  "title": "Example Act, 2024",\n  "actYear": "2024",\n  "sourceUrl": "https://official-source.example/act",\n  "sourceDate": "2026-10-13",\n  "text": "Paste verified legal text here..."\n}'}</pre>
+          <pre>{'{\n  "title": "Example Act, 2024",\n  "actYear": "2024",\n  "sourceUrl": "https://official-source.example/act",\n  "sourceDate": "2026-10-13",\n  "sections": [\n    {\n      "citation": "Section 1",\n      "heading": "Title and commencement",\n      "text": "Paste verified section text here...",\n      "sourceUrl": "https://official-source.example/act#section-1"\n    }\n  ]\n}'}</pre>
         </details>
         {message && <p className="library-message" role="status">{message}</p>}
       </div>
       {visibleDocuments.length > 0 && <div className="offline-doc-list">
         {visibleDocuments.map((document) => {
-          const match = matches.find((item) => item.document.id === document.id);
+          const documentMatches = matches.filter((item) => item.document.id === document.id);
           return <article className="offline-doc-card" key={document.id}>
             <div className="offline-doc-top">
               <div className="source-icon"><FileText size={19} /></div>
               <div className="offline-doc-title"><h3>{document.title}</h3><span>{document.actYear ? 'Year: ' + document.actYear + ' · ' : ''}Imported {new Date(document.importedAt).toLocaleDateString()}</span></div>
               <button className="remove-doc" onClick={() => { void removeDocument(document.id); }} aria-label={'Remove ' + document.title}><X size={16} /></button>
             </div>
-            {query.trim() && match && <p className="offline-snippet">{match.snippet}{match.snippet.length >= 400 ? '…' : ''}</p>}
-            {query.trim() && !match && <p className="offline-snippet muted-snippet">No match for the current search.</p>}
+            {query.trim() && documentMatches.map((match, index) => <div className="offline-match" key={document.id + '-' + (match.citation ?? 'document') + '-' + index}>
+              <div className="offline-match-citation"><strong>{match.citation || document.title}{match.sectionHeading ? ' — ' + match.sectionHeading : ''}</strong>{(match.sourceUrl || document.sourceUrl) && <a href={match.sourceUrl || document.sourceUrl} target="_blank" rel="noreferrer">Source <ChevronRight size={13} /></a>}</div>
+              <p className="offline-snippet">{match.snippet}{match.snippet.length >= 400 ? '…' : ''}</p>
+            </div>)}
             <div className="offline-doc-bottom">
               {document.sourceUrl ? <a href={document.sourceUrl} target="_blank" rel="noreferrer">Open source <ChevronRight size={14} /></a> : <span>Source URL not supplied</span>}
               <span>{document.text.length.toLocaleString()} characters</span>
