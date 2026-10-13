@@ -24,6 +24,27 @@ export type OfflineLegalDocument = {
 const DB_NAME = 'nyayaai-legal-library';
 const STORE_NAME = 'documents';
 const DB_VERSION = 1;
+const MAX_IMPORT_BYTES = 50 * 1024 * 1024;
+
+function optionalHttpUrl(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !value.trim()) return '';
+  let parsed: URL;
+  try { parsed = new URL(value.trim()); } catch { throw new Error(label + ' must be a valid http(s) URL.'); }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error(label + ' must use http:// or https://.');
+  }
+  return parsed.href;
+}
+
+function optionalDate(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !value.trim()) return '';
+  const candidate = value.trim();
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(candidate) || Number.isNaN(Date.parse(candidate)) ||
+      new Date(candidate).toISOString().slice(0, 10) !== candidate) {
+    throw new Error(label + ' must be a valid date in YYYY-MM-DD format.');
+  }
+  return candidate;
+}
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -93,6 +114,9 @@ export async function parseLegalFile(
     onProgress?: (message: string) => void;
   } = {}
 ): Promise<OfflineLegalDocument[]> {
+  if (file.size > MAX_IMPORT_BYTES) throw new Error('This file is larger than 50 MB. Split large legal libraries into smaller files and import them separately.');
+  const safeSourceUrl = optionalHttpUrl(metadata.sourceUrl, 'Source URL');
+  const safeSourceDate = optionalDate(metadata.sourceDate, 'Source-check date');
   const importedAt = new Date().toISOString();
 
   if (file.name.toLowerCase().endsWith('.pdf')) {
@@ -140,8 +164,8 @@ export async function parseLegalFile(
       id: 'import-' + Date.now() + '-' + file.size,
       title: file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' '),
       actYear: '',
-      sourceUrl: metadata.sourceUrl?.trim() ?? '',
-      sourceDate: metadata.sourceDate?.trim() ?? '',
+      sourceUrl: safeSourceUrl,
+      sourceDate: safeSourceDate,
       text,
       importedAt
     }];
@@ -163,7 +187,8 @@ export async function parseLegalFile(
         const heading = typeof item.heading === 'string' ? item.heading.trim() : '';
         const sectionText = typeof item.text === 'string' ? item.text.trim() : '';
         if (!citation || !sectionText) throw new Error(`Provision ${sectionIndex + 1} needs "citation" (or "sectionNumber") and "text".`);
-        return { citation, heading, text: sectionText, ...(typeof item.sourceUrl === 'string' ? { sourceUrl: item.sourceUrl } : {}) };
+        const sectionSourceUrl = optionalHttpUrl(item.sourceUrl, 'Provision ' + (sectionIndex + 1) + ' source URL');
+        return { citation, heading, text: sectionText, ...(sectionSourceUrl ? { sourceUrl: sectionSourceUrl } : {}) };
       });
       const suppliedText = typeof value.text === 'string' ? value.text.trim() : '';
       const text = suppliedText || sections.map((section) => `${section.citation}: ${section.heading}\n${section.text}`).join('\n\n');
@@ -172,8 +197,8 @@ export async function parseLegalFile(
         id: typeof value.id === 'string' && value.id.trim() ? value.id : `import-${Date.now()}-${index}`,
         title,
         actYear: typeof value.actYear === 'string' || typeof value.actYear === 'number' ? String(value.actYear) : '',
-        sourceUrl: typeof value.sourceUrl === 'string' && value.sourceUrl.trim() ? value.sourceUrl.trim() : (metadata.sourceUrl?.trim() ?? ''),
-        sourceDate: typeof value.sourceDate === 'string' && value.sourceDate.trim() ? value.sourceDate.trim() : (metadata.sourceDate?.trim() ?? ''),
+        sourceUrl: optionalHttpUrl(value.sourceUrl || safeSourceUrl, 'Document source URL'),
+        sourceDate: optionalDate(value.sourceDate || safeSourceDate, 'Document source-check date'),
         text,
         sections,
         importedAt
