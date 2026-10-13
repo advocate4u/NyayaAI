@@ -9,6 +9,7 @@ export default function OfflineLibrary({ query }: Props) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const matches = useMemo(() => searchOfflineDocuments(documents, query), [documents, query]);
+  const visibleDocuments = useMemo(() => query.trim() ? documents.filter((document) => matches.some((match) => match.document.id === document.id)) : documents, [documents, matches, query]);
 
   useEffect(() => {
     void listOfflineDocuments().then(setDocuments).catch(() => {
@@ -61,8 +62,8 @@ export default function OfflineLibrary({ query }: Props) {
         </details>
         {message && <p className="library-message" role="status">{message}</p>}
       </div>
-      {documents.length > 0 && <div className="offline-doc-list">
-        {documents.map((document) => {
+      {visibleDocuments.length > 0 && <div className="offline-doc-list">
+        {visibleDocuments.map((document) => {
           const match = matches.find((item) => item.document.id === document.id);
           return <article className="offline-doc-card" key={document.id}>
             <div className="offline-doc-top">
@@ -79,6 +80,7 @@ export default function OfflineLibrary({ query }: Props) {
           </article>;
         })}
       </div>}
+      {query.trim() && documents.length > 0 && visibleDocuments.length === 0 && <div className="empty-state library-empty"><FileText size={24} /><h3>No offline document matches</h3><p>Try a shorter keyword or import the relevant official legal text.</p></div>}
       <p className="legal-data-warning">Imported text is not independently verified by NyayaAI. Preserve the official source and date, and check amendments and commencement before relying on it.</p>
     </section>
   );
