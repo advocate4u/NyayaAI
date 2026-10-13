@@ -1,3 +1,8 @@
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
 export type LegalSection = {
   citation: string;
   heading: string;
@@ -78,9 +83,35 @@ export type OfflineSearchResult = {
   sourceUrl?: string;
 };
 
-export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]> {
-  const raw = await file.text();
+export async function parseLegalFile(
+  file: File,
+  metadata: { sourceUrl?: string; sourceDate?: string } = {}
+): Promise<OfflineLegalDocument[]> {
   const importedAt = new Date().toISOString();
+
+  if (file.name.toLowerCase().endsWith('.pdf')) {
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    const pages: string[] = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const pageContent = await page.getTextContent();
+      const pageText = pageContent.items.map((item) => ('str' in item ? item.str : '')).join(' ').replace(/\\s+/g, ' ').trim();
+      if (pageText) pages.push(pageText);
+    }
+    const text = pages.join('\\n\\n').trim();
+    if (!text) throw new Error('No selectable text was found in this PDF. It may be scanned; OCR support is not available yet.');
+    return [{
+      id: `import-${Date.now()}-${file.size}`,
+      title: file.name.replace(/\\.pdf$/i, '').replace(/[_-]+/g, ' '),
+      actYear: '',
+      sourceUrl: metadata.sourceUrl?.trim() ?? '',
+      sourceDate: metadata.sourceDate?.trim() ?? '',
+      text,
+      importedAt
+    }];
+  }
+
+  const raw = await file.text();
   if (file.name.toLowerCase().endsWith('.json')) {
     const parsed: unknown = JSON.parse(raw);
     const entries = Array.isArray(parsed) ? parsed : [parsed];
@@ -105,8 +136,8 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
         id: typeof value.id === 'string' && value.id.trim() ? value.id : `import-${Date.now()}-${index}`,
         title,
         actYear: typeof value.actYear === 'string' || typeof value.actYear === 'number' ? String(value.actYear) : '',
-        sourceUrl: typeof value.sourceUrl === 'string' ? value.sourceUrl : '',
-        sourceDate: typeof value.sourceDate === 'string' ? value.sourceDate : '',
+        sourceUrl: typeof value.sourceUrl === 'string' && value.sourceUrl.trim() ? value.sourceUrl.trim() : (metadata.sourceUrl?.trim() ?? ''),
+        sourceDate: typeof value.sourceDate === 'string' && value.sourceDate.trim() ? value.sourceDate.trim() : (metadata.sourceDate?.trim() ?? ''),
         text,
         sections,
         importedAt
@@ -114,7 +145,7 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
     });
   }
   if (!file.name.toLowerCase().endsWith('.txt')) {
-    throw new Error('For this milestone, import .txt or .json files. PDF support will be added later.');
+    throw new Error('Choose a .pdf, .txt or .json file.');
   }
   const text = raw.trim();
   if (!text) throw new Error('The selected text file is empty.');
