@@ -1,5 +1,5 @@
 export type LegalSection = {
-  sectionNumber: string;
+  citation: string;
   heading: string;
   text: string;
   sourceUrl?: string;
@@ -73,7 +73,7 @@ export type OfflineSearchResult = {
   document: OfflineLegalDocument;
   matchedTerms: number;
   snippet: string;
-  sectionNumber?: string;
+  citation?: string;
   sectionHeading?: string;
   sourceUrl?: string;
 };
@@ -92,11 +92,11 @@ export async function parseLegalFile(file: File): Promise<OfflineLegalDocument[]
       const sections = sectionsRaw.map((section, sectionIndex) => {
         if (!section || typeof section !== 'object') throw new Error('Each section must be an object.');
         const item = section as Record<string, unknown>;
-        const sectionNumber = typeof item.sectionNumber === 'string' || typeof item.sectionNumber === 'number' ? String(item.sectionNumber).trim() : '';
+        const citation = typeof item.citation === 'string' || typeof item.citation === 'number' ? String(item.citation).trim() : (typeof item.sectionNumber === 'string' || typeof item.sectionNumber === 'number' ? 'Section ' + String(item.sectionNumber).trim() : '');
         const heading = typeof item.heading === 'string' ? item.heading.trim() : '';
         const sectionText = typeof item.text === 'string' ? item.text.trim() : '';
-        if (!sectionNumber || !sectionText) throw new Error(`Section ${sectionIndex + 1} needs "sectionNumber" and "text".`);
-        return { sectionNumber, heading, text: sectionText, ...(typeof item.sourceUrl === 'string' ? { sourceUrl: item.sourceUrl } : {}) };
+        if (!citation || !sectionText) throw new Error(`Provision ${sectionIndex + 1} needs "citation" (or "sectionNumber") and "text".`);
+        return { citation, heading, text: sectionText, ...(typeof item.sourceUrl === 'string' ? { sourceUrl: item.sourceUrl } : {}) };
       });
       const suppliedText = typeof value.text === 'string' ? value.text.trim() : '';
       const text = suppliedText || sections.map((section) => `Section ${section.sectionNumber}: ${section.heading}\n${section.text}`).join('\n\n');
@@ -149,7 +149,7 @@ export function searchOfflineDocuments(documents: OfflineLegalDocument[], query:
           document,
           matchedTerms: matchedTerms.length,
           snippet: section.text.slice(start, end).replace(/\s+/g, ' ').trim(),
-          sectionNumber: section.sectionNumber,
+          citation: section.citation,
           sectionHeading: section.heading,
           sourceUrl: section.sourceUrl || document.sourceUrl
         });
