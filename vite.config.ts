@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: [],
+      includeAssets: ['nyayaai.svg'],
       manifest: {
         name: 'NyayaAI — Indian Law Assistant',
         short_name: 'NyayaAI',
@@ -17,7 +17,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
-        icons: []
+        icons: [\n          { src: '/nyayaai.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }\n        ]
       },
       workbox: {
         navigateFallback: 'index.html',
