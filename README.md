@@ -57,7 +57,7 @@ Early scaffold. No legal corpus or generative AI model is bundled yet. Offline s
 
 ## Importing legal text for offline search
 
-The current app can import `.txt` files or structured `.json` files. Imported data is stored in the browser's IndexedDB on the current device and is not uploaded. JSON can contain a full-text document or section-level chunks:
+The current app can extract selectable text from `.pdf` files and import `.txt` or structured `.json` files. Scanned/image-only PDFs require OCR, which is not included yet. Imported data is stored in the browser's IndexedDB on the current device and is not uploaded. You can attach an official source URL and the date you verified the text to PDF/TXT imports. JSON can contain a full-text document or section-level chunks:
 
 ```json
 {
