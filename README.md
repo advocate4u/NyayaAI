@@ -104,3 +104,8 @@ The first deployment requires an internet connection. Once the PWA assets and an
 The Android wrapper uses Capacitor with app ID `in.nyayaai.app`. The build workflow copies the repository's `Logo.png` into the PWA branding assets and generates Android launcher icon sizes from that same image. The APK workflow runs on pull requests, pushes to `main`, and manual dispatch. Successful main-branch builds publish a test/debug APK as a GitHub prerelease asset and a 30-day Actions artifact.
 
 **APK type:** unsigned debug APK for testing, not a Play Store-signed release. On Android, download `app-debug.apk`, permit installation from the browser if prompted, and install. Back up any important offline library before changing app versions. Android WebView/WebGPU support and offline model performance vary by device.
+
+
+## Scanned PDF OCR
+
+The offline legal library can OCR scanned/image-only PDF pages in the browser using Tesseract.js. Choose English or English + Hindi before import. Selectable text is extracted directly, and OCR is applied only to pages without embedded text. OCR language data may need a one-time download; offline OCR later depends on the browser retaining the downloaded language data. OCR accuracy depends on scan clarity and must be checked against the original legal document.
