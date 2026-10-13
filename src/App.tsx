@@ -1,8 +1,28 @@
 import { useMemo, useState } from 'react';
 import {
   ArrowDownToLine, BookOpen, CheckCircle2, ChevronRight, FileText,
-  Languages, Search, ShieldCheck, Wifi, WifiOff, X
+  Languages, Search, ShieldCheck, Wifi, WifiOff, X, PenLine, UserRound, Copy, ClipboardList
 } from 'lucide-react';
+
+type AdvocateProfile = {
+  name: string;
+  qualification: string;
+  courts: string;
+  office: string;
+  phone: string;
+  email: string;
+  signature: string;
+};
+
+const defaultProfile: AdvocateProfile = {
+  name: 'Anit Mittal',
+  qualification: 'Advocate | B.Tech, LL.B.',
+  courts: 'Punjab & Haryana High Court; District & Sessions Court, Karnal; Sub-Divisional Court, Gharaunda',
+  office: '1st Floor, Doctor Mittal Clinic, New Grain Market Road, Gharaunda',
+  phone: '',
+  email: '',
+  signature: 'Anit Mittal'
+};
 
 type LegalSource = {
   id: string;
@@ -114,6 +134,15 @@ export default function App() {
     catch { return []; }
   });
   const [online] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
+  const [profile, setProfile] = useState<AdvocateProfile>(() => {
+    try {
+      return { ...defaultProfile, ...(JSON.parse(localStorage.getItem('nyayaai-profile') ?? '{}') as Partial<AdvocateProfile>) };
+    } catch { return defaultProfile; }
+  });
+  const [draftType, setDraftType] = useState('Legal notice');
+  const [draftFacts, setDraftFacts] = useState('');
+  const [draftOutput, setDraftOutput] = useState('');
+  const [profileSaved, setProfileSaved] = useState(false);
 
   const results = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -135,6 +164,55 @@ export default function App() {
   }
 
   const savedSources = sources.filter((source) => saved.includes(source.id));
+
+  function updateProfile(field: keyof AdvocateProfile, value: string) {
+    setProfile((current) => ({ ...current, [field]: value }));
+    setProfileSaved(false);
+  }
+
+  function saveProfile() {
+    localStorage.setItem('nyayaai-profile', JSON.stringify(profile));
+    setProfileSaved(true);
+  }
+
+  function createDraft() {
+    const facts = draftFacts.trim();
+    if (!facts) {
+      setDraftOutput('Please enter the facts or purpose before creating a draft.');
+      return;
+    }
+    const lines = [
+      draftType.toUpperCase(),
+      '',
+      '[DRAFT — VERIFY ALL FACTS, APPLICABLE LAW, DATES AND PROCEDURAL REQUIREMENTS BEFORE USE]',
+      '',
+      'To / Before: [Enter recipient, authority or court]',
+      'Subject: [Enter concise subject]',
+      '',
+      'Respected Sir/Madam,',
+      '',
+      'The relevant facts and request, as supplied by the user, are set out below:',
+      facts,
+      '',
+      '[Insert the applicable legal provisions, grounds, limitation details, supporting documents and specific relief sought after verification.]',
+      '',
+      'It is therefore respectfully requested that the appropriate relief be considered in accordance with law.',
+      '',
+      'Place: [Enter place]',
+      'Date: [Enter date]',
+      '',
+      'Signature: __________________________',
+      profile.signature || profile.name,
+      profile.qualification,
+      profile.courts,
+      profile.office,
+      profile.phone ? 'Phone: ' + profile.phone : '',
+      profile.email ? 'Email: ' + profile.email : '',
+      '',
+      'This is a general drafting template, not a verified pleading or legal opinion.'
+    ].filter((line) => line !== undefined);
+    setDraftOutput(lines.join('\n'));
+  }
 
   return (
     <main className="app-shell">
@@ -205,7 +283,50 @@ export default function App() {
         <div className="saved-chips">{savedSources.map((source) => <button key={source.id} onClick={() => setQuery(source.shortTitle)}>{source.shortTitle}</button>)}</div>
       </section>}
 
-      <section className="assistant-teaser">
+
+      <section className="content-section profile-section">
+        <div className="section-heading">
+          <div><span className="section-kicker">YOUR WORKSPACE</span><h2>Advocate details & signature</h2></div>
+          <UserRound size={22} color="#26796e" />
+        </div>
+        <div className="profile-card">
+          <p className="profile-intro">These details are saved only in this browser on this device and can be inserted into draft templates. Edit them before use.</p>
+          <div className="profile-grid">
+            <label>Full name<input value={profile.name} onChange={(e) => updateProfile('name', e.target.value)} /></label>
+            <label>Qualification / designation<input value={profile.qualification} onChange={(e) => updateProfile('qualification', e.target.value)} /></label>
+            <label className="wide-field">Courts / practice locations<textarea rows={2} value={profile.courts} onChange={(e) => updateProfile('courts', e.target.value)} /></label>
+            <label className="wide-field">Office address<textarea rows={2} value={profile.office} onChange={(e) => updateProfile('office', e.target.value)} /></label>
+            <label>Phone (optional)<input value={profile.phone} onChange={(e) => updateProfile('phone', e.target.value)} placeholder="Add if you want it on drafts" /></label>
+            <label>Email (optional)<input value={profile.email} onChange={(e) => updateProfile('email', e.target.value)} placeholder="Add if you want it on drafts" /></label>
+            <label className="wide-field">Typed signature name<input value={profile.signature} onChange={(e) => updateProfile('signature', e.target.value)} /></label>
+          </div>
+          <div className="profile-footer"><span>{profileSaved ? <><CheckCircle2 size={15} /> Saved on this device</> : 'Not saved yet'}</span><button className="primary-button save-profile" onClick={saveProfile}>Save details</button></div>
+        </div>
+      </section>
+
+      <section className="content-section draft-section">
+        <div className="section-heading">
+          <div><span className="section-kicker">DRAFTING TOOLS</span><h2>Start a legal draft</h2></div>
+          <PenLine size={22} color="#26796e" />
+        </div>
+        <div className="draft-card">
+          <div className="draft-note"><ClipboardList size={17} /><span>Creates a structured starter template only. It does not research or insert verified legal provisions.</span></div>
+          <label className="draft-label">Document type
+            <select value={draftType} onChange={(e) => setDraftType(e.target.value)}>
+              <option>Legal notice</option><option>Application</option><option>Affidavit</option><option>Representation</option><option>Case summary</option>
+            </select>
+          </label>
+          <label className="draft-label">Facts and purpose
+            <textarea rows={5} value={draftFacts} onChange={(e) => setDraftFacts(e.target.value)} placeholder="Enter the facts, dates, parties and relief requested. Avoid unnecessary sensitive personal data." />
+          </label>
+          <button className="primary-button" onClick={createDraft}>Create draft template</button>
+          {draftOutput && <div className="draft-output">
+            <div className="output-heading"><strong>Draft preview</strong><button className="save-button" onClick={() => { void navigator.clipboard?.writeText(draftOutput); }}><Copy size={14} /> Copy text</button></div>
+            <pre>{draftOutput}</pre>
+          </div>}
+        </div>
+      </section>
+\n      <section className="assistant-teaser">
         <div className="assistant-icon"><Languages size={23} /></div>
         <div><span className="section-kicker">COMING NEXT</span><h2>Ask NyayaAI</h2><p>Source-cited answers in Hindi and English, with on-device AI planned for a later release.</p></div>
         <span className="coming-soon">Soon</span>
