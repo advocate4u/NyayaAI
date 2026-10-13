@@ -8,6 +8,7 @@ export type LegalSection = {
   heading: string;
   text: string;
   sourceUrl?: string;
+  sourceDate?: string;
 };
 
 export type OfflineLegalDocument = {
@@ -103,6 +104,7 @@ export type OfflineSearchResult = {
   citation?: string;
   sectionHeading?: string;
   sourceUrl?: string;
+  sourceDate?: string;
 };
 
 export async function parseLegalFile(
@@ -188,7 +190,8 @@ export async function parseLegalFile(
         const sectionText = typeof item.text === 'string' ? item.text.trim() : '';
         if (!citation || !sectionText) throw new Error(`Provision ${sectionIndex + 1} needs "citation" (or "sectionNumber") and "text".`);
         const sectionSourceUrl = optionalHttpUrl(item.sourceUrl, 'Provision ' + (sectionIndex + 1) + ' source URL');
-        return { citation, heading, text: sectionText, ...(sectionSourceUrl ? { sourceUrl: sectionSourceUrl } : {}) };
+        const sectionSourceDate = optionalDate(item.sourceDate, 'Provision ' + (sectionIndex + 1) + ' source-check date');
+        return { citation, heading, text: sectionText, ...(sectionSourceUrl ? { sourceUrl: sectionSourceUrl } : {}), ...(sectionSourceDate ? { sourceDate: sectionSourceDate } : {}) };
       });
       const suppliedText = typeof value.text === 'string' ? value.text.trim() : '';
       const text = suppliedText || sections.map((section) => `${section.citation}: ${section.heading}\n${section.text}`).join('\n\n');
@@ -263,7 +266,8 @@ export function searchOfflineDocuments(documents: OfflineLegalDocument[], query:
           snippet: section.text.slice(start, end).replace(/\s+/g, ' ').trim(),
           citation: section.citation,
           sectionHeading: section.heading,
-          sourceUrl: section.sourceUrl || document.sourceUrl
+          sourceUrl: section.sourceUrl || document.sourceUrl,
+          sourceDate: section.sourceDate || document.sourceDate
         });
       }
       continue;
