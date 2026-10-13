@@ -71,7 +71,7 @@ export default function OfflineLibrary({ query }: Props) {
               <div className="offline-doc-title"><h3>{document.title}</h3><span>{document.actYear ? 'Year: ' + document.actYear + ' · ' : ''}Imported {new Date(document.importedAt).toLocaleDateString()}</span></div>
               <button className="remove-doc" onClick={() => { void removeDocument(document.id); }} aria-label={'Remove ' + document.title}><X size={16} /></button>
             </div>
-            {query.trim() && documentMatches.map((match, index) => <div className="offline-match" key={document.id + '-' + (match.sectionNumber ?? 'document') + '-' + index}>
+            {query.trim() && documentMatches.map((match, index) => <div className="offline-match" key={document.id + '-' + (match.citation ?? 'document') + '-' + index}>
               <div className="offline-match-citation"><strong>{match.citation || document.title}{match.sectionHeading ? ' — ' + match.sectionHeading : ''}</strong>{(match.sourceUrl || document.sourceUrl) && <a href={match.sourceUrl || document.sourceUrl} target="_blank" rel="noreferrer">Source <ChevronRight size={13} /></a>}</div>
               <p className="offline-snippet">{match.snippet}{match.snippet.length >= 400 ? '…' : ''}</p>
             </div>)}
