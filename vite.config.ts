@@ -2,7 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const base = process.env.GITHUB_ACTIONS === 'true' ? '/NyayaAI/' : '/';
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -16,9 +19,9 @@ export default defineConfig({
         background_color: '#f5f7fa',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: base,
         icons: [
-          { src: '/nyayaai.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }
+          { src: 'nyayaai.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }
         ]
       },
       workbox: {
