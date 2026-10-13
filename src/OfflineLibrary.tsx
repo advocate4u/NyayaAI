@@ -8,6 +8,8 @@ export default function OfflineLibrary({ query }: Props) {
   const [documents, setDocuments] = useState<OfflineLegalDocument[]>([]);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourceDate, setSourceDate] = useState('');
   const matches = useMemo(() => searchOfflineDocuments(documents, query), [documents, query]);
   const visibleDocuments = useMemo(() => query.trim() ? documents.filter((document) => matches.some((match) => match.document.id === document.id)) : documents, [documents, matches, query]);
 
@@ -22,7 +24,7 @@ export default function OfflineLibrary({ query }: Props) {
     setBusy(true);
     setMessage('');
     try {
-      const parsed = await parseLegalFile(file);
+      const parsed = await parseLegalFile(file, { sourceUrl, sourceDate });
       for (const document of parsed) await saveOfflineDocument(document);
       setDocuments(await listOfflineDocuments());
       setMessage(`Imported ${parsed.length} document${parsed.length === 1 ? '' : 's'} to this device.`);
@@ -50,11 +52,15 @@ export default function OfflineLibrary({ query }: Props) {
         <span className="result-count">{documents.length} imported</span>
       </div>
       <div className="library-card">
-        <p className="profile-intro">Import legal text obtained from an authoritative source. Files stay in this browser on this device; nothing is uploaded. This version supports plain text and JSON, not PDFs yet.</p>
+        <p className="profile-intro">Import a selectable-text PDF, .txt file or structured .json file obtained from an authoritative source. Files stay in this browser on this device; nothing is uploaded. Scanned image-only PDFs need OCR, which is not included yet.</p>
+        <div className="import-metadata">
+          <label>Official source URL (optional)<input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://official-source.gov.in/…" /></label>
+          <label>Verified on (optional)<input type="date" value={sourceDate} onChange={(event) => setSourceDate(event.target.value)} /></label>
+        </div>
         <label className="file-picker">
           <ArrowDownToLine size={18} />
-          <span>{busy ? 'Importing document…' : 'Import .txt or .json'}</span>
-          <input type="file" accept=".txt,.json,text/plain,application/json" disabled={busy} onChange={(event) => { void importFile(event.target.files?.[0]); event.currentTarget.value = ''; }} />
+          <span>{busy ? 'Importing document…' : 'Import PDF, TXT or JSON'}</span>
+          <input type="file" accept=".pdf,.txt,.json,application/pdf,text/plain,application/json" disabled={busy} onChange={(event) => { void importFile(event.target.files?.[0]); event.currentTarget.value = ''; }} />
         </label>
         <details className="json-help">
           <summary>JSON format for structured legal text</summary>

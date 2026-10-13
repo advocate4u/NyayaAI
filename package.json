@@ -15,7 +15,8 @@
     "react": "latest",
     "react-dom": "latest",
     "vite": "latest",
-    "vite-plugin-pwa": "latest"
+    "vite-plugin-pwa": "latest",
+    "pdfjs-dist": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",
