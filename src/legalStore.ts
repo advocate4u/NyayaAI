@@ -34,9 +34,8 @@ export async function listOfflineDocuments(): Promise<OfflineLegalDocument[]> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll();
-    request.onsuccess = () => resolve((request.result as OfflineLegalDocument[]).sort((a, b) => a.title.localeCompare(b.title)));
-    request.onerror = () => reject(request.error ?? new Error('Could not read the local legal library.'));
-    request.transaction?.addEventListener('complete', () => db.close());
+    request.onsuccess = () => { const documents = (request.result as OfflineLegalDocument[]).sort((a, b) => a.title.localeCompare(b.title)); db.close(); resolve(documents); };
+    request.onerror = () => { db.close(); reject(request.error ?? new Error('Could not read the local legal library.')); };
   });
 }
 
