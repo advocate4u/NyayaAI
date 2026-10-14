@@ -2,11 +2,29 @@
 const rateBuckets = new Map();
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 12;
+const MAX_TRACKED_CLIENTS = 5_000;
 
 function send(res, status, body) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   res.status(status).json(body);
+}
+
+function allowClient(ip, now) {
+  let bucket = rateBuckets.get(ip);
+  if (!bucket || now - bucket.startedAt >= WINDOW_MS) {
+    // Bound the in-memory fallback limiter so spoofed client identifiers cannot grow it forever.
+    if (!bucket && rateBuckets.size >= MAX_TRACKED_CLIENTS) {
+      for (const [key, value] of rateBuckets) {
+        if (now - value.startedAt >= WINDOW_MS) rateBuckets.delete(key);
+      }
+      if (rateBuckets.size >= MAX_TRACKED_CLIENTS) return false;
+    }
+    rateBuckets.set(ip, { startedAt: now, count: 1 });
+    return true;
+  }
+  bucket.count += 1;
+  return bucket.count <= MAX_REQUESTS_PER_WINDOW;
 }
 
 export default async function handler(req, res) {
@@ -17,20 +35,15 @@ export default async function handler(req, res) {
 
   const allowedOrigin = process.env.NYAYAI_ALLOWED_ORIGIN;
   const origin = req.headers.origin;
-  if (allowedOrigin && origin && origin !== allowedOrigin) {
+  // When an allow-list is configured, require an exact Origin match rather than allowing
+  // requests with no Origin header to bypass the browser-origin check.
+  if (allowedOrigin && origin !== allowedOrigin) {
     return send(res, 403, { error: 'This origin is not allowed to use the NyayaAI endpoint.' });
   }
 
   const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
-  const now = Date.now();
-  const bucket = rateBuckets.get(ip);
-  if (!bucket || now - bucket.startedAt >= WINDOW_MS) {
-    rateBuckets.set(ip, { startedAt: now, count: 1 });
-  } else {
-    bucket.count += 1;
-    if (bucket.count > MAX_REQUESTS_PER_WINDOW) {
-      return send(res, 429, { error: 'Request limit reached. Please wait a minute and try again.' });
-    }
+  if (!allowClient(ip, Date.now())) {
+    return send(res, 429, { error: 'Request limit reached. Please wait a minute and try again.' });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -70,7 +83,6 @@ export default async function handler(req, res) {
     });
     const result = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      // Do not return upstream details that may contain account or request metadata.
       return send(res, upstream.status === 429 ? 429 : 502, {
         error: upstream.status === 429
           ? 'The AI provider is rate-limiting requests or the account has reached its limit.'
