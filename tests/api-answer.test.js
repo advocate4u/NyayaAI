@@ -87,6 +87,16 @@ test('rejects requests from an unapproved browser origin', async () => {
   assert.match(res.body.error, /origin/i);
 });
 
+test('rejects requests with a missing Origin when an allow-list is configured', async () => {
+  process.env.OPENAI_API_KEY = 'test-key';
+  process.env.NYAYAI_ALLOWED_ORIGIN = 'https://nyayaai.example';
+  const { res } = await invoke({
+    body: { question: 'Question?', evidence: '[1] Evidence' }
+  });
+  assert.equal(res.statusCode, 403);
+  assert.match(res.body.error, /origin/i);
+});
+
 test('calls the Responses API with server-side credentials and returns only the answer payload', async () => {
   process.env.OPENAI_API_KEY = 'test-key';
   process.env.OPENAI_MODEL = 'test-model';
