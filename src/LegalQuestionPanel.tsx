@@ -5,6 +5,26 @@ import { generateOnlineLegalAnswer, isOnlineAiConfigured } from './onlineAi';
 import { BookOpen, ClipboardList, Copy, Info, Search } from 'lucide-react';
 import { listOfflineDocuments, searchOfflineDocuments, type OfflineLegalDocument, type OfflineSearchResult } from './legalStore';
 
+function auditCitationLabels(answer: string, evidenceCount: number): string {
+  const labels: number[] = [];
+  const pattern = /\\[(\\d+)\\]/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(answer)) !== null) labels.push(Number(match[1]));
+
+  if (labels.length === 0) {
+    return 'Citation audit: no numbered evidence labels were detected. Check every legal claim against the passages below.';
+  }
+
+  const unsupported = [...new Set(labels.filter((label) => label < 1 || label > evidenceCount))];
+  if (unsupported.length > 0) {
+    return 'Citation audit warning: labels ' + unsupported.map((label) => '[' + label + ']').join(', ')
+      + ' do not match the ' + evidenceCount + ' evidence passage(s) provided. Treat these references as unsupported until checked.';
+  }
+
+  return 'Citation label check: all numbered labels fall within the ' + evidenceCount
+    + ' supplied passage(s). This does not prove that a passage substantively supports a claim; verify each citation and current law manually.';
+}
+
 export default function LegalQuestionPanel() {
   const [question, setQuestion] = useState('');
   const [submittedQuestion, setSubmittedQuestion] = useState('');
@@ -181,11 +201,13 @@ export default function LegalQuestionPanel() {
         {modelAnswer && <article className="ai-answer">
           <div className="ai-answer-title"><strong>Local AI response</strong><span>{engine?.modelId}</span></div>
           <p className="ai-answer-warning">Review the citations and source text before relying on this generated answer. Imported documents are not independently verified.</p>
+          <p className="ai-answer-warning">{auditCitationLabels(modelAnswer, results.length)}</p>
           <div className="ai-answer-text">{modelAnswer}</div>
         </article>}
         {onlineAnswer && <article className="ai-answer">
           <div className="ai-answer-title"><strong>Advanced online AI response</strong><span>{onlineModel}</span></div>
           <p className="ai-answer-warning">This answer was generated online using selected imported passages. Sources and current legal status are not independently verified. Do not rely on it without checking official text and case records.</p>
+          <p className="ai-answer-warning">{auditCitationLabels(onlineAnswer, results.length)}</p>
           <div className="ai-answer-text">{onlineAnswer}</div>
         </article>}
 
